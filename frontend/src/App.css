@@ -1,0 +1,21 @@
+.app {
+  display: flex;
+  height: 100vh;
+  overflow: hidden;
+  position: relative;
+  z-index: 1;
+}
+
+.main {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  position: relative;
+}
+
+.pageWrapper {
+  height: 100%;
+  width: 100%;
+  position: absolute;
+  inset: 0;
+}
