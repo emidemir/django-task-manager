@@ -1,0 +1,30 @@
+*) Docker postgresql connecting the psql
+ - I had to connect to docker inside the container (it runs inside docker). 
+ - If you just open the dockerhub, select the postgres container, and go to the exec section, and write psql, you'll get the following error:
+    psql: error: connection to server on socket "/var/run/postgresql/.s.PGSQL.5432" failed: FATAL:  role "root" does not exist
+    The detail of this error is explained in this medium post: https://medium.com/@speaktoharisudhan/psql-fatal-peer-authentication-failed-for-user-postgres-27019ae98073
+ - https://forums.docker.com/t/how-can-i-run-command-into-container/119266
+    This form shows you how you can connect to your containarized postgresql application. 
+    Basically, use the username and database name you used while setting the postgres in the dokcer-compose file
+
+!!!!!-----!!!!!
+serializers.PrimaryKeyRelatedField takes queryset parameter. Don't forget
+
+*) I wanted my clients to be able to get serialized user data when reading, and just use the user id when writing. The solution and the explanation is the followings
+ - Django REST Framework completely separates the logic for reading (serialization) and writing (deserialization) into two distinct methods.
+ - When you want to send data out to the client (e.g., a GET request), you access 'serializer.data'. Under the hood, DRF loops through your fields and calls to_representation().
+   By overriding this method, you intercepted the outgoing data and said, "Instead of sending the ID, use the UserSerializer to send the whole object."
+ - When a client sends data in (e.g., a POST or PUT request), you pass that data to the serializer and call serializer.is_valid().
+   During validation, DRF does not call to_representation(). Instead, it calls a completely different method: to_internal_value().
+ - Because you defined the field like this: user = serializers.PrimaryKeyRelatedField(queryset=User.objects.all())
+   You told DRF, "By default, handle reads and writes using the Primary Key (ID)."
+   Since you only overrode to_representation, you only changed the read behavior. You left the write behavior completely untouched. 
+   Therefore, when to_internal_value() runs during a POST request, it relies on the default behavior of PrimaryKeyRelatedField, which expects a simple integer ID, validates
+   that the user exists in the database, and prepares it to be saved.
+
+*) SuspiciousFileOperation exception
+ - https://forum.djangoproject.com/t/django-3-2-4-update-suspiciousfileoperation-detected-path-traversal-attempt/8196
+ - On this link, (Command + f) to this part "If I have understood the problem correctly, I will need to have my file path relative to"
+ - You have a leading slash (/) in the string you are returning for the file path. Django's storage backends (including django-storages for MinIO/S3) expect upload_to paths to be relative. 
+   When you provide a path that starts with a /, Django interprets it as an absolute path. For security reasons, Django prevents saving files to absolute paths to stop path traversal attacks 
+   (i.e., someone trying to write files outside of your designated storage directory or bucket), and it throws a SuspiciousFileOperation.
