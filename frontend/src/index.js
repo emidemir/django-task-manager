@@ -4,10 +4,36 @@ import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
 
+/** REACT CONTEXTS */
+import {AuthContextProvider} from './contexts/AuthContext'
+
+/** PROTECTED ROUTE */
+import {ProtectedRoute} from './components/protected_route/ProtectedRoute'
+
+import {SignIn} from './features/auth/SignIn'
+
+import {createBrowserRouter, RouterProvider} from 'react-router-dom'
+
+const router = createBrowserRouter([
+  // Public Route
+  {path:'/', element:<SignIn/>},
+
+  // Private Route
+  {
+    element: <ProtectedRoute/>,
+    children:[
+      {path:'/home', element:<Home/>},
+    ]
+  }
+  
+])
+
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <App />
+    <AuthContextProvider>
+      <RouterProvider router={router}/>
+    </AuthContextProvider>
   </React.StrictMode>
 );
 
