@@ -1,13 +1,36 @@
+import { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { FADE_UP } from '../../lib/constants';
 import styles from './Auth.module.css';
 
-export default function SignIn({ onNavigate }) {
+// 1. Import your custom hook
+import { useAuth } from '../../contexts/AuthContext';
+
+export default function SignIn() {
+  // 2. Set up local state for the form inputs
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  
+  // 3. Grab the login function from your context
+  const { login } = useAuth();
+  
+  // 4. Use React Router for navigation
+  const navigate = useNavigate();
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Add authentication logic here
-    onNavigate('dashboard');
+    
+    // Here is where you would normally call your backend API.
+    // For now, we'll just simulate a successful login and pass the user data to Context.
+    const userData = { email: email, name: 'Alex' };
+    
+    // 5. Fire the login function from AuthContext
+    login(userData);
+    
+    // 6. Redirect the user to the protected dashboard
+    navigate('/dashboard');
   };
 
   return (
@@ -28,6 +51,8 @@ export default function SignIn({ onNavigate }) {
               <input 
                 type="email" 
                 id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className={styles.input} 
                 placeholder="alex@example.com" 
                 required 
@@ -42,6 +67,8 @@ export default function SignIn({ onNavigate }) {
               <input 
                 type="password" 
                 id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className={styles.input} 
                 placeholder="••••••••" 
                 required 
@@ -60,9 +87,10 @@ export default function SignIn({ onNavigate }) {
 
         <motion.div className={styles.footer} {...FADE_UP(0.6)}>
           Don't have an account? 
-          <button className={styles.link} onClick={() => onNavigate('signup')}>
+          {/* Replaced onNavigate prop with React Router's Link */}
+          <Link to="/signup" className={styles.link}>
             Sign up
-          </button>
+          </Link>
         </motion.div>
       </motion.div>
     </div>

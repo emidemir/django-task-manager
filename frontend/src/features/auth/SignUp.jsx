@@ -1,12 +1,33 @@
+import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { FADE_UP } from '../../lib/constants';
 import styles from './Auth.module.css';
+import { useAuth } from '../../contexts/AuthContext';
+
 
 export default function SignUp({ onNavigate }) {
+  // Pull in the login function from your custom AuthContext
+  const { login } = useAuth();
+
+  // Set up controlled state for your form inputs
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+
   const handleSubmit = (e) => {
     e.preventDefault();
-    // Add registration logic here
+    
+    // Add your actual registration API logic here in the future
+    
+    // For now, we simulate a successful sign-up and log the user in locally
+    const userData = {
+      name: name,
+      email: email,
+      // You typically wouldn't store the password in the global context
+    };
+
+    login(userData);
     onNavigate('dashboard');
   };
 
@@ -28,6 +49,8 @@ export default function SignUp({ onNavigate }) {
               <input 
                 type="text" 
                 id="name"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 className={styles.input} 
                 placeholder="Alex Carter" 
                 required 
@@ -42,6 +65,8 @@ export default function SignUp({ onNavigate }) {
               <input 
                 type="email" 
                 id="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 className={styles.input} 
                 placeholder="alex@example.com" 
                 required 
@@ -56,6 +81,8 @@ export default function SignUp({ onNavigate }) {
               <input 
                 type="password" 
                 id="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
                 className={styles.input} 
                 placeholder="Create a strong password" 
                 required 
@@ -74,7 +101,7 @@ export default function SignUp({ onNavigate }) {
 
         <motion.div className={styles.footer} {...FADE_UP(0.7)}>
           Already have an account? 
-          <button className={styles.link} onClick={() => onNavigate('signin')}>
+          <button type="button" className={styles.link} onClick={() => onNavigate('signin')}>
             Sign in
           </button>
         </motion.div>
