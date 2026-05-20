@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Plus, Users, CheckCircle2, Calendar, ArrowUpRight } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext'; // Brought in your AuthContext
 import { projects, users } from '../../lib/mockData';
 import { PROJECT_STATUS } from '../../lib/constants';
 import { calcPercent } from '../../lib/utils';
@@ -7,10 +8,16 @@ import { PageHeader, Avatar, ProgressBar } from '../../components/shared';
 import styles from './Projects.module.css';
 
 export default function Projects() {
+  const { user } = useAuth(); // Pull the user from context
+  
+  // Personalize the title based on the logged-in user
+  const firstName = user?.name ? user.name.split(' ')[0] : null;
+  const pageTitle = firstName ? `${firstName}'s Projects` : 'Projects';
+
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Projects"
+        title={pageTitle}
         subtitle={`${projects.length} projects · ${projects.filter(p => p.status === 'active').length} active`}
         actions={
           <button className={styles.addBtn}>

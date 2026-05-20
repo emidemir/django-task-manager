@@ -1,5 +1,7 @@
 import { motion } from 'framer-motion';
 import { CheckCircle2, AlertTriangle, Folder, TrendingUp, ArrowUpRight } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../../contexts/AuthContext'; // Adjust path if needed
 import { stats, activityFeed, tasks, projects, users } from '../../lib/mockData';
 import { FADE_UP } from '../../lib/constants';
 import { calcPercent } from '../../lib/utils';
@@ -17,17 +19,23 @@ const STAT_CARDS = [
   { label: 'Active Projects',  value: 2,  icon: Folder,       color: 'var(--amber)',  bg: 'var(--amber-dim)',  delta: '4 total' },
 ];
 
-export default function Dashboard({ onNavigate }) {
+export default function Dashboard() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  
+  // Grab the user's first name for the greeting, fallback to 'User' if missing
+  const firstName = user?.name ? user.name.split(' ')[0] : 'User';
+
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').slice(0, 5);
 
   return (
     <div className={styles.page}>
       <motion.div {...FADE_UP(0)}>
         <PageHeader
-          title="Good morning, Alex 👋"
+          title={`Good morning, ${firstName} 👋`}
           subtitle="Here's what's happening across your workspace today."
           actions={
-            <button className={styles.ctaBtn} onClick={() => onNavigate('tasks')}>
+            <button className={styles.ctaBtn} onClick={() => navigate('/tasks')}>
               View all tasks <ArrowUpRight size={14} />
             </button>
           }

@@ -1,11 +1,13 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell,
-  Settings, ChevronRight, Zap, Users, Plus,
+  Settings, ChevronRight, Zap, Users, Plus, LogOut
 } from 'lucide-react';
-import { projects, currentUser } from '../../lib/mockData';
+import { projects } from '../../lib/mockData';
 import { useNotifications } from '../../hooks/useNotifications';
+import { useAuth } from '../../contexts/AuthContext'; // 2. Import your AuthContext
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
@@ -15,9 +17,23 @@ const NAV_ITEMS = [
   { id: 'team',          label: 'Team',           icon: Users },
 ];
 
-export function Sidebar({ activePage, onNavigate }) {
+export function Sidebar({ activePage }) { // Removed onNavigate prop
+  const navigate = useNavigate(); // Initialize navigation
   const [projectsOpen, setProjectsOpen] = useState(true);
   const { unreadCount } = useNotifications();
+  const { user, logout } = useAuth(); // Grab the real user and logout function
+
+  // Safely extract initials (e.g., "Alex Carter" -> "AC")
+  const getInitials = (name) => {
+    if (!name) return 'U';
+    const names = name.split(' ');
+    return names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
+  };
+
+  const handleLogout = () => {
+    logout();
+    navigate('/'); // Send back to login screen
+  };
 
   return (
     <aside className={styles.sidebar}>
@@ -38,7 +54,7 @@ export function Sidebar({ activePage, onNavigate }) {
             <button
               key={item.id}
               className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-              onClick={() => onNavigate(item.id)}
+              onClick={() => navigate(`/${item.id}`)} // Use navigate here
             >
               <Icon size={16} strokeWidth={isActive ? 2.5 : 1.8} />
               <span>{item.label}</span>
@@ -56,7 +72,7 @@ export function Sidebar({ activePage, onNavigate }) {
         {/* Notifications — separated so badge logic is contained */}
         <button
           className={`${styles.navItem} ${activePage === 'notifications' ? styles.active : ''}`}
-          onClick={() => onNavigate('notifications')}
+          onClick={() => navigate('/notifications')} // Use navigate here
         >
           <Bell size={16} strokeWidth={activePage === 'notifications' ? 2.5 : 1.8} />
           <span>Notifications</span>
@@ -96,7 +112,7 @@ export function Sidebar({ activePage, onNavigate }) {
                 <button
                   key={project.id}
                   className={styles.projectItem}
-                  onClick={() => onNavigate('projects')}
+                  onClick={() => navigate('/projects')} // Use navigate here
                 >
                   <span className={styles.projectDot} style={{ background: project.color }} />
                   <span className={styles.projectName}>{project.name}</span>
@@ -116,22 +132,30 @@ export function Sidebar({ activePage, onNavigate }) {
 
       {/* User + settings */}
       <div className={styles.userSection}>
-        <button className={styles.navItem} onClick={() => onNavigate('settings')}>
+        <button className={styles.navItem} onClick={() => navigate('/settings')}>
           <Settings size={16} strokeWidth={1.8} />
           <span>Settings</span>
         </button>
+        
+        {/* Dynamic User Profile Card */}
         <div className={styles.userCard}>
           <div
             className={styles.avatar}
             style={{ background: 'var(--teal-dim)', color: 'var(--teal)' }}
           >
-            {currentUser.initials}
+            {getInitials(user?.name)}
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>{currentUser.name}</span>
-            <span className={styles.userRole}>{currentUser.role}</span>
+            <span className={styles.userName}>{user?.name || 'User'}</span>
+            <span className={styles.userRole}>{user?.email || 'Member'}</span>
           </div>
-          <div className={styles.onlineDot} />
+          <button 
+            onClick={handleLogout} 
+            title="Log out"
+            style={{ background: 'transparent', border: 'none', cursor: 'pointer', color: 'var(--text-muted)' }}
+          >
+            <LogOut size={16} />
+          </button>
         </div>
       </div>
     </aside>

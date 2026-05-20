@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCheck, Wifi, MessageSquare, UserCheck, CheckCircle2 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuth } from '../../contexts/AuthContext'; // Brought in your AuthContext
 import { NOTIF_COLOR, NOTIF_LABEL } from '../../lib/constants';
 import { useNotifications } from '../../hooks/useNotifications';
 import { PageHeader, Avatar } from '../../components/shared';
@@ -14,15 +15,21 @@ const TYPE_ICON = {
 };
 
 export default function Notifications() {
+  const { user } = useAuth(); // Pull the user from context
+  
   const {
     notifs, unreadCount, liveQueue, wsConnected, wsLog,
     canSimulate, simulateIncoming, markAllRead, markRead,
   } = useNotifications();
 
+  // Personalize the title based on the logged-in user
+  const firstName = user?.name ? user.name.split(' ')[0] : null;
+  const pageTitle = firstName ? `${firstName}'s Notifications` : 'Notifications';
+
   return (
     <div className={styles.page}>
       <PageHeader
-        title="Notifications"
+        title={pageTitle}
         subtitle={`${unreadCount} unread · Real-time via WebSocket`}
         actions={
           <>

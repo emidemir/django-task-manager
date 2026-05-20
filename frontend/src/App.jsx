@@ -1,42 +1,35 @@
-import { useState } from 'react';
+import { useLocation, Outlet } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { Sidebar } from './components/layout/Sidebar';
-import Dashboard     from './features/dashboard/Dashboard';
-import Tasks         from './features/tasks/Tasks';
-import Projects      from './features/projects/Projects';
-import Notifications from './features/notifications/Notifications';
-import Team          from './features/team/Team';
 import { PAGE_VARIANTS } from './lib/constants';
 import styles from './App.module.css';
 
-const PAGES = {
-  dashboard:     Dashboard,
-  tasks:         Tasks,
-  projects:      Projects,
-  notifications: Notifications,
-  team:          Team,
-};
-
 export default function App() {
-  const [activePage, setActivePage] = useState('dashboard');
-  const PageComponent = PAGES[activePage] || Dashboard;
+  const location = useLocation();
+  
+  // Extract the current page from the URL (e.g., "/dashboard" becomes "dashboard")
+  // We pass this to the Sidebar so it knows which item to highlight
+  const activePage = location.pathname.split('/')[1] || 'dashboard';
 
   return (
     <div className={styles.app}>
       <div className="ambient-blob blob-1" />
       <div className="ambient-blob blob-2" />
-      <Sidebar activePage={activePage} onNavigate={setActivePage} />
+      
+      <Sidebar activePage={activePage} />
+      
       <main className={styles.main}>
         <AnimatePresence mode="wait">
           <motion.div
-            key={activePage}
+            key={location.pathname} // Triggers the animation when the URL changes
             className={styles.pageWrapper}
             variants={PAGE_VARIANTS}
             initial="initial"
             animate="animate"
             exit="exit"
           >
-            <PageComponent onNavigate={setActivePage} />
+            {/* The Outlet renders whatever child route matches the current URL */}
+            <Outlet />
           </motion.div>
         </AnimatePresence>
       </main>

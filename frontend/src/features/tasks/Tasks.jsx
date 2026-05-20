@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Plus, MessageSquare, Clock, Filter, Search } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext'; // Brought in your AuthContext
 import { tasks, users, projects } from '../../lib/mockData';
 import { PRIORITY_COLOR, PRIORITY_LABEL } from '../../lib/constants';
 import { PageHeader } from '../../components/shared';
@@ -14,8 +15,13 @@ const COLUMNS = [
 ];
 
 export default function Tasks() {
+  const { user } = useAuth(); // Pull the user from context
   const [search, setSearch]               = useState('');
   const [selectedProject, setProject]     = useState('all');
+
+  // Personalize the title based on the logged-in user
+  const firstName = user?.name ? user.name.split(' ')[0] : null;
+  const pageTitle = firstName ? `${firstName}'s Tasks` : 'My Tasks';
 
   const filtered = tasks.filter(t => {
     const matchSearch  = t.title.toLowerCase().includes(search.toLowerCase());
@@ -26,7 +32,7 @@ export default function Tasks() {
   return (
     <div className={styles.page}>
       <PageHeader
-        title="My Tasks"
+        title={pageTitle}
         subtitle={`${tasks.length} tasks across ${projects.length} projects`}
         actions={
           <button className={styles.addBtn}>
