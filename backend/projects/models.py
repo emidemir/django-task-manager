@@ -18,6 +18,9 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, related_name='projects', on_delete=models.CASCADE)
 
+    class Meta:
+        indexes = [models.Index(fields=['created_by', 'created_at'])]
+
 class Task(models.Model):
     id = models.UUIDField(primary_key=True, unique=True, default=uuid.uuid4, editable=False)
     project = models.ForeignKey(Project, related_name='tasks', on_delete=models.CASCADE)
@@ -44,12 +47,18 @@ class Task(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
 
+    class Meta:
+        indexes = [models.Index(fields=['created_by', 'created_at', 'due_date'])]
+
 class ProjectMember(models.Model):
     id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False, unique=True)
     project = models.ForeignKey(Project, related_name='members', on_delete=models.PROTECT)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     role = models.CharField(max_length=50) # JSUT FOR NOW, MODIFY THIS LATER!
     joined_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['user'])]
 
 def file_upload_path(instance, filename):
     return f"documents/{instance.id}/{filename}"
@@ -61,6 +70,9 @@ class Attachment(models.Model):
     file = models.FileField(upload_to=file_upload_path)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        indexes = [models.Index(fields=['uploaded_by', 'task'])]
+
 class Comment(models.Model):
     id = models.UUIDField(primary_key=True,editable=False,default=uuid.uuid4,unique=True)
     task = models.ForeignKey(Task, related_name='comments', on_delete=models.CASCADE)
@@ -68,3 +80,6 @@ class Comment(models.Model):
     body = models.TextField()
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        indexes = [models.Index(fields=['task', 'user'])]

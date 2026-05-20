@@ -22,9 +22,21 @@ serializers.PrimaryKeyRelatedField takes queryset parameter. Don't forget
    Therefore, when to_internal_value() runs during a POST request, it relies on the default behavior of PrimaryKeyRelatedField, which expects a simple integer ID, validates
    that the user exists in the database, and prepares it to be saved.
 
+!!!!!-----!!!!!
+You don't have to catch the serializer.is_valid(raise_exception=True) exception because drf will return HTTP 400 Bad Request responses by default.
+
+*) 
+ - Use select_related() when you are looking at:
+   -> ForeignKey (A standard one-to-many relationship, but you are looking from the "many" side to the "one" side. e.g., getting a Book's author).
+   -> OneToOneField
+
+ - Use prefetch_related() when you are looking at:
+   -> ManyToManyField
+   -> Reverse ForeignKey (Looking from the "one" side to the "many" side. e.g., getting an Author and trying to fetch all their books using author.book_set.all()).
+
 *) SuspiciousFileOperation exception
  - https://forum.djangoproject.com/t/django-3-2-4-update-suspiciousfileoperation-detected-path-traversal-attempt/8196
  - On this link, (Command + f) to this part "If I have understood the problem correctly, I will need to have my file path relative to"
- - You have a leading slash (/) in the string you are returning for the file path. Django's storage backends (including django-storages for MinIO/S3) expect upload_to paths to be relative. 
+ - You have a leading slash (/) at the beginning in the string you are returning for the file path. Django's storage backends (including django-storages for MinIO/S3) expect upload_to paths to be relative. 
    When you provide a path that starts with a /, Django interprets it as an absolute path. For security reasons, Django prevents saving files to absolute paths to stop path traversal attacks 
    (i.e., someone trying to write files outside of your designated storage directory or bucket), and it throws a SuspiciousFileOperation.
