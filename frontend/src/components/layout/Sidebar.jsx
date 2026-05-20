@@ -2,21 +2,22 @@ import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell,
-  Settings, ChevronRight, Zap, Users, Plus
+  Settings, ChevronRight, Zap, Users, Plus,
 } from 'lucide-react';
-import { projects, currentUser, notifications } from '../mockData';
+import { projects, currentUser } from '../../lib/mockData';
+import { useNotifications } from '../../hooks/useNotifications';
 import styles from './Sidebar.module.css';
 
-const navItems = [
-  { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard },
-  { id: 'projects', label: 'Projects', icon: FolderKanban },
-  { id: 'tasks', label: 'My Tasks', icon: CheckSquare },
-  { id: 'team', label: 'Team', icon: Users },
+const NAV_ITEMS = [
+  { id: 'dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
+  { id: 'projects',      label: 'Projects',       icon: FolderKanban },
+  { id: 'tasks',         label: 'My Tasks',       icon: CheckSquare },
+  { id: 'team',          label: 'Team',           icon: Users },
 ];
 
-export default function Sidebar({ activePage, onNavigate }) {
+export function Sidebar({ activePage, onNavigate }) {
   const [projectsOpen, setProjectsOpen] = useState(true);
-  const unreadCount = notifications.filter(n => !n.isRead).length;
+  const { unreadCount } = useNotifications();
 
   return (
     <aside className={styles.sidebar}>
@@ -28,9 +29,9 @@ export default function Sidebar({ activePage, onNavigate }) {
         <span className={styles.logoText}>TeamFlow</span>
       </div>
 
-      {/* Nav */}
+      {/* Primary nav */}
       <nav className={styles.nav}>
-        {navItems.map((item) => {
+        {NAV_ITEMS.map((item) => {
           const Icon = item.icon;
           const isActive = activePage === item.id;
           return (
@@ -52,23 +53,25 @@ export default function Sidebar({ activePage, onNavigate }) {
           );
         })}
 
+        {/* Notifications — separated so badge logic is contained */}
         <button
           className={`${styles.navItem} ${activePage === 'notifications' ? styles.active : ''}`}
           onClick={() => onNavigate('notifications')}
         >
           <Bell size={16} strokeWidth={activePage === 'notifications' ? 2.5 : 1.8} />
           <span>Notifications</span>
-          {unreadCount > 0 && (
-            <span className={styles.badge}>{unreadCount}</span>
-          )}
+          {unreadCount > 0 && <span className={styles.badge}>{unreadCount}</span>}
           {activePage === 'notifications' && (
-            <motion.div className={styles.activeIndicator} layoutId="activeNav"
-              transition={{ type: 'spring', stiffness: 400, damping: 30 }} />
+            <motion.div
+              className={styles.activeIndicator}
+              layoutId="activeNav"
+              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+            />
           )}
         </button>
       </nav>
 
-      {/* Projects */}
+      {/* Projects list */}
       <div className={styles.section}>
         <button
           className={styles.sectionHeader}
@@ -90,8 +93,11 @@ export default function Sidebar({ activePage, onNavigate }) {
               style={{ overflow: 'hidden' }}
             >
               {projects.map((project) => (
-                <button key={project.id} className={styles.projectItem}
-                  onClick={() => onNavigate('projects')}>
+                <button
+                  key={project.id}
+                  className={styles.projectItem}
+                  onClick={() => onNavigate('projects')}
+                >
                   <span className={styles.projectDot} style={{ background: project.color }} />
                   <span className={styles.projectName}>{project.name}</span>
                   <span className={styles.projectCount}>
@@ -108,14 +114,17 @@ export default function Sidebar({ activePage, onNavigate }) {
         </AnimatePresence>
       </div>
 
-      {/* User */}
+      {/* User + settings */}
       <div className={styles.userSection}>
         <button className={styles.navItem} onClick={() => onNavigate('settings')}>
           <Settings size={16} strokeWidth={1.8} />
           <span>Settings</span>
         </button>
         <div className={styles.userCard}>
-          <div className={styles.avatar} style={{ background: 'var(--teal-dim)', color: 'var(--teal)' }}>
+          <div
+            className={styles.avatar}
+            style={{ background: 'var(--teal-dim)', color: 'var(--teal)' }}
+          >
             {currentUser.initials}
           </div>
           <div className={styles.userInfo}>

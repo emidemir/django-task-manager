@@ -1,0 +1,18 @@
+.list { display: flex; flex-direction: column; }
+
+.item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.item:last-child { border-bottom: none; }
+
+.body { flex: 1; font-size: 12.5px; line-height: 1.4; min-width: 0; }
+
+.actor  { color: var(--text-primary); font-weight: 500; }
+.action { color: var(--text-muted); }
+.target { color: var(--text-secondary); }
+
+.time { font-size: 11px; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }

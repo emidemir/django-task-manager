@@ -1,23 +1,22 @@
 import { motion } from 'framer-motion';
-import { Mail, Shield, Activity } from 'lucide-react';
-import { users, tasks, projects } from '../mockData';
+import { Activity } from 'lucide-react';
+import { users, tasks, projects } from '../../lib/mockData';
+import { PageHeader, Avatar } from '../../components/shared';
 import styles from './Team.module.css';
 
 export default function Team() {
   return (
     <div className={styles.page}>
-      <div className={styles.header}>
-        <div>
-          <h1 className={styles.title}>Team</h1>
-          <p className={styles.subtitle}>{users.length} members · all online</p>
-        </div>
-      </div>
+      <PageHeader
+        title="Team"
+        subtitle={`${users.length} members · all online`}
+      />
 
       <div className={styles.grid}>
         {users.map((user, i) => {
-          const userTasks = tasks.filter(t => t.assigneeId === user.id);
-          const inProgress = userTasks.filter(t => t.status === 'in_progress').length;
-          const done = userTasks.filter(t => t.status === 'done').length;
+          const userTasks    = tasks.filter(t => t.assigneeId === user.id);
+          const inProgress   = userTasks.filter(t => t.status === 'in_progress').length;
+          const done         = userTasks.filter(t => t.status === 'done').length;
           const userProjects = projects.filter(p => p.members.includes(user.id));
 
           return (
@@ -30,10 +29,7 @@ export default function Team() {
               whileHover={{ y: -3, transition: { duration: 0.15 } }}
             >
               <div className={styles.cardGlow} style={{ background: user.color }} />
-              <div className={styles.avatarLarge}
-                style={{ background: user.color + '20', color: user.color, border: `2px solid ${user.color}40` }}>
-                {user.initials}
-              </div>
+              <Avatar initials={user.initials} color={user.color} size="lg" />
 
               <div className={styles.userInfo}>
                 <div className={styles.userName}>{user.name}</div>
@@ -59,7 +55,11 @@ export default function Team() {
 
               <div className={styles.projects}>
                 {userProjects.map(p => (
-                  <span key={p.id} className={styles.projectTag} style={{ color: p.color, background: p.color + '14', borderColor: p.color + '30' }}>
+                  <span
+                    key={p.id}
+                    className={styles.projectTag}
+                    style={{ color: p.color, background: p.color + '14', borderColor: p.color + '30' }}
+                  >
                     {p.name}
                   </span>
                 ))}

@@ -1,24 +1,25 @@
 import { useState } from 'react';
 import { AnimatePresence, motion } from 'framer-motion';
-import Sidebar from './components/Sidebar';
-import Dashboard from './features/Dashboard';
-import Tasks from './features/Tasks';
-import Projects from './features/Projects';
-import Notifications from './features/Notifications';
-import Team from './features/Team';
-import styles from './App.css';
+import { Sidebar } from './components/layout/Sidebar';
+import Dashboard     from './features/dashboard/Dashboard';
+import Tasks         from './features/tasks/Tasks';
+import Projects      from './features/projects/Projects';
+import Notifications from './features/notifications/Notifications';
+import Team          from './features/team/Team';
+import { PAGE_VARIANTS } from './lib/constants';
+import styles from './App.module.css';
 
-const pages = { dashboard: Dashboard, tasks: Tasks, projects: Projects, notifications: Notifications, team: Team };
-
-const pageVariants = {
-  initial: { opacity: 0, x: 12 },
-  animate: { opacity: 1, x: 0, transition: { duration: 0.28, ease: [0.22, 1, 0.36, 1] } },
-  exit: { opacity: 0, x: -8, transition: { duration: 0.18 } },
+const PAGES = {
+  dashboard:     Dashboard,
+  tasks:         Tasks,
+  projects:      Projects,
+  notifications: Notifications,
+  team:          Team,
 };
 
 export default function App() {
   const [activePage, setActivePage] = useState('dashboard');
-  const PageComponent = pages[activePage] || Dashboard;
+  const PageComponent = PAGES[activePage] || Dashboard;
 
   return (
     <div className={styles.app}>
@@ -30,7 +31,7 @@ export default function App() {
           <motion.div
             key={activePage}
             className={styles.pageWrapper}
-            variants={pageVariants}
+            variants={PAGE_VARIANTS}
             initial="initial"
             animate="animate"
             exit="exit"
