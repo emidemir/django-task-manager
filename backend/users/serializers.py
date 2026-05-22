@@ -9,7 +9,7 @@ class UserSerializer(serializers.ModelField):
 
 class LoginSerializer(serializers.Serializer):
     email = serializers.EmailField()
-    passwor = serializers.CharField(write_only=True)
+    password = serializers.CharField(write_only=True)
 
 class SignupSerializer(serializers.ModelSerializer):
     password_match = serializers.CharField(write_only=True)
@@ -25,7 +25,7 @@ class SignupSerializer(serializers.ModelSerializer):
     
     def create(self, validated_data):
         validated_data.pop('password_match')
-        validated_data['username'] = f"{validated_data['first_name']-validated_data['last_name']}"
+        validated_data['username'] = f"{validated_data['first_name']}-{validated_data['last_name']}"
         
         # When you send a POST request to a CreateAPIView, DRF triggers a specific chain of events. 
         # Neither the view nor the default serializer knows that your password field needs special cryptographic treatment. 

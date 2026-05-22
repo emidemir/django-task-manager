@@ -5,32 +5,52 @@ import { Mail, Lock, ArrowRight } from 'lucide-react';
 import { FADE_UP } from '../../lib/constants';
 import styles from './Auth.module.css';
 
-// 1. Import your custom hook
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../api';
 
 export default function SignIn() {
-  // 2. Set up local state for the form inputs
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   
-  // 3. Grab the login function from your context
-  const { login } = useAuth();
+  // New state for handling UI feedback
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
   
-  // 4. Use React Router for navigation
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setIsLoading(true);
     
-    // Here is where you would normally call your backend API.
-    // For now, we'll just simulate a successful login and pass the user data to Context.
-    const userData = { email: email, name: 'Alex' };
-    
-    // 5. Fire the login function from AuthContext
-    login(userData);
-    
-    // 6. Redirect the user to the protected dashboard
-    navigate('/dashboard');
+    try {
+      const response = await api.post('/users/login/', {
+        email: email, 
+        password: password
+      });
+
+      // 3. Extract tokens from the response
+      const tokens = {
+        access: response.data.access_token,
+        refresh: response.data.refresh_token
+      };
+      
+      // 4. Extract user data. 
+      const userData = response.data.user || { email: email };
+      
+      // 5. Fire the login function from AuthContext with both arguments
+      login(userData, tokens);
+      
+      // 6. Redirect to the protected dashboard
+      navigate('/dashboard');
+      
+    } catch (err) {
+      console.error("Login error:", err);
+      setError(err.response?.data?.detail || 'Failed to sign in. Please check your credentials.');
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,6 +64,14 @@ export default function SignIn() {
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
+          
+          {/* Display error message if login fails */}
+          {error && (
+            <motion.div className={styles.error} {...FADE_UP(0.25)} style={{ color: 'red', marginBottom: '1rem' }}>
+              {error}
+            </motion.div>
+          )}
+
           <motion.div className={styles.inputGroup} {...FADE_UP(0.3)}>
             <label className={styles.label} htmlFor="email">Email address</label>
             <div className={styles.inputWrapper}>
@@ -56,6 +84,7 @@ export default function SignIn() {
                 className={styles.input} 
                 placeholder="alex@example.com" 
                 required 
+                disabled={isLoading}
               />
             </div>
           </motion.div>
@@ -72,6 +101,7 @@ export default function SignIn() {
                 className={styles.input} 
                 placeholder="••••••••" 
                 required 
+                disabled={isLoading}
               />
             </div>
           </motion.div>
@@ -79,15 +109,15 @@ export default function SignIn() {
           <motion.button 
             type="submit" 
             className={styles.submitBtn}
+            disabled={isLoading}
             {...FADE_UP(0.5)}
           >
-            Sign In <ArrowRight size={16} />
+            {isLoading ? 'Signing In...' : 'Sign In'} <ArrowRight size={16} />
           </motion.button>
         </form>
 
         <motion.div className={styles.footer} {...FADE_UP(0.6)}>
           Don't have an account? 
-          {/* Replaced onNavigate prop with React Router's Link */}
           <Link to="/signup" className={styles.link}>
             Sign up
           </Link>

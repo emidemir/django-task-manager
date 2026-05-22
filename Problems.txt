@@ -40,3 +40,11 @@ You don't have to catch the serializer.is_valid(raise_exception=True) exception 
  - You have a leading slash (/) at the beginning in the string you are returning for the file path. Django's storage backends (including django-storages for MinIO/S3) expect upload_to paths to be relative. 
    When you provide a path that starts with a /, Django interprets it as an absolute path. For security reasons, Django prevents saving files to absolute paths to stop path traversal attacks 
    (i.e., someone trying to write files outside of your designated storage directory or bucket), and it throws a SuspiciousFileOperation.
+
+*) ----- NOTES RELATED TO FRONTEND -----
+  -> In React setups, .env files are expected to be in the project root, not inside src/. In my case, inside the frontend folder.
+  -> When using axios (api.interceptors.request.use((),())) we use two functions. First is; what happens when a request comes, the
+     second is what happens when that request fails. Also, remember to return the config after the first function. If you don't return 
+     it, the request will just vanish.
+  -> Use axios for making requests inside interceptors to prevent triggering the interceptors again (stuck in a loop!)
+  

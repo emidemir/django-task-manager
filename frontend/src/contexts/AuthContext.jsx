@@ -15,16 +15,21 @@ export const AuthContextProvider = ({ children }) => {
         }
     });
 
-    const login = (userData) => {
+    const login = (userData, tokens) => {
         setUser(userData);
-        // 2. Save to localStorage when the user logs in
         localStorage.setItem('user', JSON.stringify(userData));
+        
+        // Save the tokens so api.js can find them!
+        localStorage.setItem('accessToken', tokens.access);
+        localStorage.setItem('refreshToken', tokens.refresh);
     };
 
     const logout = () => {
         setUser(null);
-        // 3. Clean up localStorage when the user logs out
         localStorage.removeItem('user');
+        
+        localStorage.removeItem('accessToken');
+        localStorage.removeItem('refreshToken');
     };
 
     const value = {

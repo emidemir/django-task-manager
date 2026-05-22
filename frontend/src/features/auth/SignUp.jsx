@@ -1,34 +1,81 @@
 import React, { useState } from 'react';
+import { useNavigate, Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, ArrowRight } from 'lucide-react';
 import { FADE_UP } from '../../lib/constants';
 import styles from './Auth.module.css';
+
 import { useAuth } from '../../contexts/AuthContext';
+import api from '../../api';
 
-
-export default function SignUp({ onNavigate }) {
-  // Pull in the login function from your custom AuthContext
+export default function SignUp() {
   const { login } = useAuth();
+  const navigate = useNavigate();
 
-  // Set up controlled state for your form inputs
-  const [name, setName] = useState('');
+  // Updated states to match the Django serializer fields
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [passwordMatch, setPasswordMatch] = useState('');
 
-  const handleSubmit = (e) => {
+  // UI feedback states
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
     
-    // Add your actual registration API logic here in the future
-    
-    // For now, we simulate a successful sign-up and log the user in locally
-    const userData = {
-      name: name,
-      email: email,
-      // You typically wouldn't store the password in the global context
-    };
+    // Client-side validation to match the serializer's logic
+    if (password !== passwordMatch) {
+      return setError("Passwords do not match.");
+    }
 
-    login(userData);
-    onNavigate('dashboard');
+    setIsLoading(true);
+    
+    try {
+      // Send the exact fields expected by your SignupSerializer
+      const response = await api.post('/users/signup/', {
+        first_name: firstName,
+        last_name: lastName,
+        email: email,
+        password: password,
+        password_match: passwordMatch
+      });
+
+      // Extract tokens and user data
+      const tokens = {
+        access: response.data.access_token,
+        refresh: response.data.refresh_token
+      };
+      
+      const userData = response.data.user || { 
+        name: `${firstName} ${lastName}`, 
+        email: email 
+      };
+
+      // Log the user in globally and redirect
+      login(userData, tokens);
+      navigate('/dashboard');
+
+    } catch (err) {
+      console.error("Registration error:", err);
+      
+      const errorData = err.response?.data;
+      
+      // Attempt to extract specific field errors from the serializer
+      const errorMsg = errorData?.detail 
+        || errorData?.non_field_errors?.[0]
+        || errorData?.email?.[0] 
+        || errorData?.password?.[0] 
+        || errorData?.password_match?.[0]
+        || 'Failed to create account. Please try again.';
+        
+      setError(errorMsg);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -42,18 +89,43 @@ export default function SignUp({ onNavigate }) {
         </div>
 
         <form className={styles.form} onSubmit={handleSubmit}>
+          
+          {error && (
+            <motion.div className={styles.error} {...FADE_UP(0.25)} style={{ color: 'red', marginBottom: '1rem' }}>
+              {error}
+            </motion.div>
+          )}
+
           <motion.div className={styles.inputGroup} {...FADE_UP(0.3)}>
-            <label className={styles.label} htmlFor="name">Full Name</label>
+            <label className={styles.label} htmlFor="firstName">First Name</label>
             <div className={styles.inputWrapper}>
               <User className={styles.inputIcon} size={18} />
               <input 
                 type="text" 
-                id="name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
+                id="firstName"
+                value={firstName}
+                onChange={(e) => setFirstName(e.target.value)}
                 className={styles.input} 
-                placeholder="Alex Carter" 
+                placeholder="Alex" 
                 required 
+                disabled={isLoading}
+              />
+            </div>
+          </motion.div>
+
+          <motion.div className={styles.inputGroup} {...FADE_UP(0.35)}>
+            <label className={styles.label} htmlFor="lastName">Last Name</label>
+            <div className={styles.inputWrapper}>
+              <User className={styles.inputIcon} size={18} />
+              <input 
+                type="text" 
+                id="lastName"
+                value={lastName}
+                onChange={(e) => setLastName(e.target.value)}
+                className={styles.input} 
+                placeholder="Carter" 
+                required 
+                disabled={isLoading}
               />
             </div>
           </motion.div>
@@ -70,6 +142,7 @@ export default function SignUp({ onNavigate }) {
                 className={styles.input} 
                 placeholder="alex@example.com" 
                 required 
+                disabled={isLoading}
               />
             </div>
           </motion.div>
@@ -86,6 +159,26 @@ export default function SignUp({ onNavigate }) {
                 className={styles.input} 
                 placeholder="Create a strong password" 
                 required 
+                disabled={isLoading}
+                minLength={8}
+              />
+            </div>
+          </motion.div>
+
+          <motion.div className={styles.inputGroup} {...FADE_UP(0.55)}>
+            <label className={styles.label} htmlFor="passwordMatch">Confirm Password</label>
+            <div className={styles.inputWrapper}>
+              <Lock className={styles.inputIcon} size={18} />
+              <input 
+                type="password" 
+                id="passwordMatch"
+                value={passwordMatch}
+                onChange={(e) => setPasswordMatch(e.target.value)}
+                className={styles.input} 
+                placeholder="Type your password again" 
+                required 
+                disabled={isLoading}
+                minLength={8}
               />
             </div>
           </motion.div>
@@ -93,17 +186,18 @@ export default function SignUp({ onNavigate }) {
           <motion.button 
             type="submit" 
             className={styles.submitBtn}
+            disabled={isLoading}
             {...FADE_UP(0.6)}
           >
-            Get Started <ArrowRight size={16} />
+            {isLoading ? 'Creating Account...' : 'Get Started'} <ArrowRight size={16} />
           </motion.button>
         </form>
 
         <motion.div className={styles.footer} {...FADE_UP(0.7)}>
           Already have an account? 
-          <button type="button" className={styles.link} onClick={() => onNavigate('signin')}>
+          <Link to="/signin" className={styles.link}>
             Sign in
-          </button>
+          </Link>
         </motion.div>
       </motion.div>
     </div>
