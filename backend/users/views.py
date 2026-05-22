@@ -11,7 +11,7 @@ from rest_framework.decorators import api_view
 
 from rest_framework_simplejwt.tokens import RefreshToken
 
-from .serializers import LoginSerializer, SignupSerializer
+from .serializers import LoginSerializer, SignupSerializer, UserSerializer
 
 User = get_user_model()
 
@@ -26,7 +26,7 @@ class LoginView(APIView):
         if user:
             refresh = RefreshToken.for_user(user)
             return Response(data={
-                'user_id': user.id,
+                'user': UserSerializer(user).data,
                 'access_token': str(refresh.access_token),
                 'refresh_token': str(refresh),
             }, status=status.HTTP_200_OK)
