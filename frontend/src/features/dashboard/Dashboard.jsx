@@ -24,7 +24,7 @@ export default function Dashboard() {
   const { user } = useAuth();
   
   // Grab the user's first name for the greeting, fallback to 'User' if missing
-  const firstName = user?.name ? user.name.split(' ')[0] : 'User';
+  const firstName = user?.first_name ? user.username.split('-')[0] : 'User';
 
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress').slice(0, 5);
 

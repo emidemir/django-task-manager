@@ -26,7 +26,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
   // Safely extract initials (e.g., "Alex Carter" -> "AC")
   const getInitials = (name) => {
     if (!name) return 'U';
-    const names = name.split(' ');
+    const names = name.split('-');
     return names.map(n => n[0]).join('').substring(0, 2).toUpperCase();
   };
 
@@ -42,7 +42,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
         <div className={styles.logoIcon}>
           <Zap size={16} strokeWidth={2.5} />
         </div>
-        <span className={styles.logoText}>TeamFlow</span>
+        <span className={styles.logoText}>Hira</span>
       </div>
 
       {/* Primary nav */}
@@ -143,10 +143,10 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
             className={styles.avatar}
             style={{ background: 'var(--teal-dim)', color: 'var(--teal)' }}
           >
-            {getInitials(user?.name)}
+            {getInitials(user?.username)}
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>{user?.name || 'User'}</span>
+            <span className={styles.userName}>{`${user?.first_name} ${user?.last_name}` || 'User'}</span>
             <span className={styles.userRole}>{user?.email || 'Member'}</span>
           </div>
           <button 
