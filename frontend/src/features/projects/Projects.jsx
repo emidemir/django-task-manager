@@ -1,3 +1,4 @@
+import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, Users, CheckCircle2, Calendar, ArrowUpRight } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; // Brought in your AuthContext
@@ -8,6 +9,8 @@ import { PageHeader, Avatar, ProgressBar } from '../../components/shared';
 import styles from './Projects.module.css';
 
 export default function Projects() {
+  const navigate = useNavigate()
+
   const { user } = useAuth(); // Pull the user from context
   
   // Personalize the title based on the logged-in user
@@ -94,7 +97,7 @@ export default function Projects() {
                       <Users size={11} /> {project.members.length}
                     </span>
                   </div>
-                  <button className={styles.openBtn} style={{ color: project.color }}>
+                  <button className={styles.openBtn} style={{ color: project.color }} onClick={() => navigate('/projects/' + project.id)}>
                     Open <ArrowUpRight size={13} />
                   </button>
                 </div>
