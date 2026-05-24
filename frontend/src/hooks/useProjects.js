@@ -9,7 +9,7 @@ export const projectKeys = {
 
 export function useProjects() {
   return useQuery({
-    queryKey: projectKeys.all(),
+    queryKey: projectKeys.all(),  
     queryFn:  projectsApi.getAll,
   });
 }
