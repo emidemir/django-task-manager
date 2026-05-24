@@ -1,6 +1,9 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
+
 import './index.css';
 import App from './App';
 import reportWebVitals from './reportWebVitals';
@@ -21,6 +24,15 @@ import Projects      from './features/projects/Projects';
 import ProjectDetail from './features/projects/ProjectDetail';
 import Notifications from './features/notifications/Notifications';
 import Team          from './features/team/Team';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5,  // Data is "fresh" for 5 minutes
+      retry: 2,                   // Retry failed requests twice
+    },
+  },
+});
 
 const router = createBrowserRouter([
   // Public Routes
@@ -51,9 +63,12 @@ const router = createBrowserRouter([
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <AuthContextProvider>
-      <RouterProvider router={router}/>
-    </AuthContextProvider>
+    <QueryClientProvider client={queryClient}>
+      <AuthContextProvider>
+        <RouterProvider router={router} />
+      </AuthContextProvider>
+      <ReactQueryDevtools initialIsOpen={false} /> {/* Dev-only panel */}
+    </QueryClientProvider>
   </React.StrictMode>
 );
 

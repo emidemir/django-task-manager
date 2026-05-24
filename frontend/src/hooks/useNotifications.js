@@ -59,3 +59,43 @@ export function useNotifications() {
     markRead,
   };
 }
+
+
+
+
+
+// ******************************************************************************************
+// ******************************************************************************************
+// ******************************************************************************************
+// ******************************************************************************************
+// ******************************************************************************************
+// ******************************************************************************************
+
+
+
+
+
+// // src/hooks/useNotifications.js
+// import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+// import { notificationsApi } from '../api';
+
+// export const notificationKeys = {
+//   all: () => ['notifications'],
+// };
+
+// export function useNotifications() {
+//   return useQuery({
+//     queryKey: notificationKeys.all(),
+//     queryFn:  notificationsApi.getAll,
+//   });
+// }
+
+// export function useMarkNotificationRead() {
+//   const queryClient = useQueryClient();
+//   return useMutation({
+//     mutationFn: (id) => notificationsApi.markRead(id),
+//     onSuccess: () => {
+//       queryClient.invalidateQueries({ queryKey: notificationKeys.all() });
+//     },
+//   });
+// }
