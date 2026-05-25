@@ -2,14 +2,20 @@ import { useEffect } from 'react';
 import { useLocation, Outlet } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { AnimatePresence, motion } from 'framer-motion';
+
 import { Sidebar } from './components/layout/Sidebar';
 import { PAGE_VARIANTS } from './lib/constants';
 import { socketManager } from './lib/socket';
 import { useAuth } from './contexts/AuthContext';
+import styles from './App.module.css';
+
+// --- Query Keys ---
 import { taskKeys } from './hooks/useTasks';
 import { projectKeys } from './hooks/useProjects';
 import { notificationKeys } from './hooks/useNotifications';
-import styles from './App.module.css';
+import { commentKeys } from './hooks/useComments';
+import { attachmentKeys } from './hooks/useAttachments';
+import { memberKeys } from './hooks/useProjectMembers';
 
 export default function App() {
   const location = useLocation();
@@ -19,38 +25,66 @@ export default function App() {
 
   useEffect(() => {
     // Connect with the user's auth token
-    socketManager.connect(user.token);
+    if (user?.token) {
+      socketManager.connect(user.token);
+    }
 
-    // --- Wire up invalidations ---
-
+    // --- Wire up real-time invalidations ---  
     const unsubs = [
-
-      // A task was created, updated, or deleted
+      // Tasks
       socketManager.on('task.created', () => {
         queryClient.invalidateQueries({ queryKey: taskKeys.all() });
       }),
-
       socketManager.on('task.updated', ({ taskId }) => {
-        // Invalidate the specific task detail AND the list
         queryClient.invalidateQueries({ queryKey: taskKeys.detail(taskId) });
         queryClient.invalidateQueries({ queryKey: taskKeys.all() });
       }),
-
       socketManager.on('task.deleted', () => {
         queryClient.invalidateQueries({ queryKey: taskKeys.all() });
       }),
 
-      // Project progress changed (e.g. a task moved to done)
+      // Projects
+      socketManager.on('project.created', () => {
+        queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+      }),
       socketManager.on('project.updated', ({ projectId }) => {
         queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
         queryClient.invalidateQueries({ queryKey: projectKeys.all() });
       }),
+      socketManager.on('project.deleted', () => {
+        queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+      }),
 
-      // Someone sent this user a notification
+      // Comments (Requires payload to include projectId)
+      socketManager.on('comment.created', ({ projectId }) => {
+        queryClient.invalidateQueries({ queryKey: commentKeys.list(projectId) });
+      }),
+      socketManager.on('comment.deleted', ({ projectId }) => {
+        queryClient.invalidateQueries({ queryKey: commentKeys.list(projectId) });
+      }),
+
+      // Attachments (Requires payload to include projectId)
+      socketManager.on('attachment.uploaded', ({ projectId }) => {
+        queryClient.invalidateQueries({ queryKey: attachmentKeys.list(projectId) });
+      }),
+      socketManager.on('attachment.deleted', ({ projectId }) => {
+        queryClient.invalidateQueries({ queryKey: attachmentKeys.list(projectId) });
+      }),
+
+      // Project Members (Requires payload to include projectId)
+      socketManager.on('member.added', ({ projectId }) => {
+        queryClient.invalidateQueries({ queryKey: memberKeys.list(projectId) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) }); // To update member counts
+      }),
+      socketManager.on('member.removed', ({ projectId }) => {
+        queryClient.invalidateQueries({ queryKey: memberKeys.list(projectId) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+      }),
+
+      // Notifications
       socketManager.on('notification.new', () => {
         queryClient.invalidateQueries({ queryKey: notificationKeys.all() });
       }),
-
     ];
 
     // Cleanup: unsubscribe all listeners and close socket on logout/unmount
@@ -58,13 +92,15 @@ export default function App() {
       unsubs.forEach(fn => fn());
       socketManager.disconnect();
     };
-  }, [user.token, queryClient]);
+  }, [user?.token, queryClient]);
 
   return (
     <div className={styles.app}>
       <div className="ambient-blob blob-1" />
       <div className="ambient-blob blob-2" />
+
       <Sidebar activePage={activePage} />
+
       <main className={styles.main}>
         <AnimatePresence mode="wait">
           <motion.div
@@ -79,6 +115,7 @@ export default function App() {
           </motion.div>
         </AnimatePresence>
       </main>
+
     </div>
   );
 }

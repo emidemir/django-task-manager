@@ -106,5 +106,29 @@ export const teamApi = {
   getAll:   ()           => api.get('/api/team/').then(r => r.data),
 };
 
+// ─── Comments ─────────────────────────────────────────────
+export const commentsApi = {
+  // Assuming nested URLs based on your Django router
+  getAllForProject: (projectId) => api.get(`/projects/projects/${projectId}/comments/`).then(r => r.data),
+  create: (projectId, data) => api.post(`/projects/projects/${projectId}/comments/`, data).then(r => r.data),
+  delete: (projectId, commentId) => api.delete(`/projects/projects/${projectId}/comments/${commentId}/`).then(r => r.data),
+};
+
+// ─── Attachments ──────────────────────────────────────────
+export const attachmentsApi = {
+  getAllForProject: (projectId) => api.get(`/projects/projects/${projectId}/attachments/`).then(r => r.data),
+  upload: (projectId, formData) => api.post(`/projects/projects/${projectId}/attachments/`, formData, {
+    headers: { 'Content-Type': 'multipart/form-data' }
+  }).then(r => r.data),
+  delete: (projectId, attachmentId) => api.delete(`/projects/projects/${projectId}/attachments/${attachmentId}/`).then(r => r.data),
+};
+
+// ─── Project Members ──────────────────────────────────────
+export const membersApi = {
+  getAllForProject: (projectId) => api.get(`/projects/projects/${projectId}/projectmembers/`).then(r => r.data),
+  add: (projectId, data) => api.post(`/projects/projects/${projectId}/projectmembers/`, data).then(r => r.data),
+  remove: (projectId, memberId) => api.delete(`/projects/projects/${projectId}/projectmembers/${memberId}/`).then(r => r.data),
+};
+
 
 export default api;
