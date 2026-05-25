@@ -80,30 +80,25 @@ api.interceptors.response.use(
 
 // ─── Tasks ───────────────────────────────────────────────
 export const tasksApi = {
-  getAll:   ()           => api.get('/api/tasks/').then(r => r.data),
-  getById:  (id)         => api.get(`/api/tasks/${id}/`).then(r => r.data),
-  create:   (data)       => api.post('/api/tasks/', data).then(r => r.data),
-  update:   (id, data)   => api.patch(`/api/tasks/${id}/`, data).then(r => r.data),
-  delete:   (id)         => api.delete(`/api/tasks/${id}/`).then(r => r.data),
+  getAll:   (projectID)           => api.get(`/projects/projects/${projectID}/tasks/`).then(r => r.data),
+  getById:  (projectID, id)         => api.get(`/projects/projects/${projectID}/tasks/${id}/`).then(r => r.data),
+  create:   (projectID, data)       => api.post(`/projects/projects/${projectID}/tasks/`, data).then(r => r.data),
+  update:   (projectID, id, data)   => api.patch(`/projects/projects/${projectID}/tasks/${id}/`, data).then(r => r.data),
+  delete:   (projectID, id)         => api.delete(`/projects/projects/${projectID}/tasks/${id}/`).then(r => r.data),
 };
 
 // ─── Projects ────────────────────────────────────────────
 export const projectsApi = {
-  getAll:   ()           => api.get('/api/projects/').then(r => r.data),
-  getById:  (id)         => api.get(`/api/projects/${id}/`).then(r => r.data),
-  create:   (data)       => api.post('/api/projects/', data).then(r => r.data),
-  update:   (id, data)   => api.patch(`/api/projects/${id}/`, data).then(r => r.data),
+  getAll:   ()           => api.get('/projects/projects/').then(r => r.data),
+  getById:  (id)         => api.get(`/projects/projects/${id}/`).then(r => r.data),
+  create:   (data)       => api.post('/projects/projects/', data).then(r => r.data),
+  update:   (id, data)   => api.patch(`/projects/projects/${id}/`, data).then(r => r.data),
 };
 
 // ─── Notifications ────────────────────────────────────────
 export const notificationsApi = {
   getAll:   ()           => api.get('/api/notifications/').then(r => r.data),
   markRead: (id)         => api.patch(`/api/notifications/${id}/`, { read: true }).then(r => r.data),
-};
-
-// ─── Team ─────────────────────────────────────────────────
-export const teamApi = {
-  getAll:   ()           => api.get('/api/team/').then(r => r.data),
 };
 
 // ─── Comments ─────────────────────────────────────────────
