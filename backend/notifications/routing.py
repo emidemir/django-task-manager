@@ -1,7 +1,7 @@
-from django.urls import re_path
+from django.urls import path
+from . import consumers
 
 websocket_urlpatterns = [
-    # re_path(r"^longpoll/$", LongPollConsumer.as_asgi()),
-    # re_path(r"^notifications/(?P<stream>\w+)/$", LongPollConsumer.as_asgi()),
-    # re_path(r"", get_asgi_application()),
+    path('alerts/', consumers.AlertConsumer.as_asgi()),
+    path('messages/', consumers.MessageConsumer.as_asgi()),
 ]
