@@ -78,52 +78,45 @@ api.interceptors.response.use(
 );
 
 
-// ─── Tasks ───────────────────────────────────────────────
-export const tasksApi = {
-  getAll:   (projectID)           => api.get(`/projects/projects/${projectID}/tasks/`).then(r => r.data),
-  getById:  (projectID, id)         => api.get(`/projects/projects/${projectID}/tasks/${id}/`).then(r => r.data),
-  create:   (projectID, data)       => api.post(`/projects/projects/${projectID}/tasks/`, data).then(r => r.data),
-  update:   (projectID, id, data)   => api.patch(`/projects/projects/${projectID}/tasks/${id}/`, data).then(r => r.data),
-  delete:   (projectID, id)         => api.delete(`/projects/projects/${projectID}/tasks/${id}/`).then(r => r.data),
-};
-
 // ─── Projects ────────────────────────────────────────────
 export const projectsApi = {
-  getAll:   ()           => api.get('/projects/projects/').then(r => r.data),
-  getById:  (id)         => api.get(`/projects/projects/${id}/`).then(r => r.data),
-  create:   (data)       => api.post('/projects/projects/', data).then(r => r.data),
-  update:   (id, data)   => api.patch(`/projects/projects/${id}/`, data).then(r => r.data),
+  getAll:   ()           => api.get('/api/projects/').then(r => r.data),
+  getById:  (id)         => api.get(`/api/projects/${id}/`).then(r => r.data),
+  create:   (data)       => api.post('/api/projects/', data).then(r => r.data),
+  update:   (id, data)   => api.patch(`/api/projects/${id}/`, data).then(r => r.data),
 };
 
-// ─── Notifications ────────────────────────────────────────
-export const notificationsApi = {
-  getAll:   ()           => api.get('/api/notifications/').then(r => r.data),
-  markRead: (id)         => api.patch(`/api/notifications/${id}/`, { read: true }).then(r => r.data),
+// ─── Tasks ───────────────────────────────────────────────
+export const tasksApi = {
+  // If projectID exists, filter by it. Otherwise fetch all tasks for the dashboard.
+  getAll:   (projectID)  => api.get(projectID ? `/api/tasks/?project=${projectID}` : '/api/tasks/').then(r => r.data),
+  getById:  (id)         => api.get(`/api/tasks/${id}/`).then(r => r.data),
+  create:   (data)       => api.post(`/api/tasks/`, data).then(r => r.data),
+  update:   (id, data)   => api.patch(`/api/tasks/${id}/`, data).then(r => r.data),
+  delete:   (id)         => api.delete(`/api/tasks/${id}/`).then(r => r.data),
 };
 
 // ─── Comments ─────────────────────────────────────────────
 export const commentsApi = {
-  // Assuming nested URLs based on your Django router
-  getAllForProject: (projectId) => api.get(`/projects/projects/${projectId}/comments/`).then(r => r.data),
-  create: (projectId, data) => api.post(`/projects/projects/${projectId}/comments/`, data).then(r => r.data),
-  delete: (projectId, commentId) => api.delete(`/projects/projects/${projectId}/comments/${commentId}/`).then(r => r.data),
+  getAllForProject: (projectId) => api.get(`/api/comments/?project=${projectId}`).then(r => r.data),
+  create: (data) => api.post(`/api/comments/`, data).then(r => r.data),
+  delete: (commentId) => api.delete(`/api/comments/${commentId}/`).then(r => r.data),
 };
 
 // ─── Attachments ──────────────────────────────────────────
 export const attachmentsApi = {
-  getAllForProject: (projectId) => api.get(`/projects/projects/${projectId}/attachments/`).then(r => r.data),
-  upload: (projectId, formData) => api.post(`/projects/projects/${projectId}/attachments/`, formData, {
+  getAllForProject: (projectId) => api.get(`/api/attachments/?project=${projectId}`).then(r => r.data),
+  upload: (formData) => api.post(`/api/attachments/`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }).then(r => r.data),
-  delete: (projectId, attachmentId) => api.delete(`/projects/projects/${projectId}/attachments/${attachmentId}/`).then(r => r.data),
+  delete: (attachmentId) => api.delete(`/api/attachments/${attachmentId}/`).then(r => r.data),
 };
 
 // ─── Project Members ──────────────────────────────────────
 export const membersApi = {
-  getAllForProject: (projectId) => api.get(`/projects/projects/${projectId}/projectmembers/`).then(r => r.data),
-  add: (projectId, data) => api.post(`/projects/projects/${projectId}/projectmembers/`, data).then(r => r.data),
-  remove: (projectId, memberId) => api.delete(`/projects/projects/${projectId}/projectmembers/${memberId}/`).then(r => r.data),
+  getAllForProject: (projectId) => api.get(`/api/members/?project=${projectId}`).then(r => r.data),
+  add: (data) => api.post(`/api/members/`, data).then(r => r.data),
+  remove: (memberId) => api.delete(`/api/members/${memberId}/`).then(r => r.data),
 };
-
 
 export default api;

@@ -3,22 +3,26 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { tasksApi } from '../api';
 
 export const taskKeys = {
-  all:    ()   => ['tasks'],
+  all: () => ['tasks'],
+  list: (projectId) => ['tasks', { projectId }], 
   detail: (id) => ['tasks', id],
 };
 
-export function useTasks() {
+// Default to null so it doesn't break when the Dashboard calls it empty
+export function useTasks(projectId = null) {
   return useQuery({
-    queryKey: taskKeys.all(),
-    queryFn:  tasksApi.getAll,
+    queryKey: projectId ? taskKeys.list(projectId) : taskKeys.all(),
+    // THE FIX: Use an arrow function so the Context Object isn't passed!
+    queryFn: () => tasksApi.getAll(projectId), 
   });
 }
 
 export function useTask(taskId) {
   return useQuery({
     queryKey: taskKeys.detail(taskId),
-    queryFn:  () => tasksApi.getById(taskId),
-    enabled:  !!taskId,
+    // THE FIX: Arrow function here too
+    queryFn: () => tasksApi.getById(taskId), 
+    enabled: !!taskId,
   });
 }
 

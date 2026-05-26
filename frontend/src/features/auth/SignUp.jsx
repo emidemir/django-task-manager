@@ -36,7 +36,7 @@ export default function SignUp() {
     
     try {
       // Send the exact fields expected by your SignupSerializer
-      const response = await api.post('/users/signup/', {
+      const response = await api.post('/api/users/signup/', {
         first_name: firstName,
         last_name: lastName,
         email: email,

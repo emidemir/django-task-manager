@@ -25,7 +25,7 @@ export default function SignIn() {
     setIsLoading(true);
     
     try {
-      const response = await api.post('/users/login/', {
+      const response = await api.post('/api/users/login/', {
         email: email, 
         password: password
       });
