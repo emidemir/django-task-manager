@@ -1,7 +1,7 @@
 from django.urls import path
-from . import consumers
+from .consumers import ProjectUpdateConsumer, ProjectStatusConsumer
 
 websocket_urlpatterns = [
-    path('<int:project_id>/', consumers.ProjectUpdateConsumer.as_asgi()),
-    path('status/', consumers.ProjectStatusConsumer.as_asgi()),
+    path('<int:project_id>/', ProjectUpdateConsumer.as_asgi()),
+    path('status/', ProjectStatusConsumer.as_asgi()),
 ]
