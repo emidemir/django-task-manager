@@ -32,3 +32,14 @@ export function useUpdateProject() {
     },
   });
 }
+
+export function useCreateProject() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (data) => projectsApi.create(data),
+    onSuccess: () => {
+      // Instantly updates the dashboard/projects list when successful!
+      queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+    },
+  });
+}

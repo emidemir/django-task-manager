@@ -57,7 +57,7 @@ export default function Projects() {
         title={pageTitle}
         subtitle={`${safeProjects.length} projects · ${activeCount} active`}
         actions={
-          <button className={styles.addBtn}>
+          <button className={styles.addBtn} onClick={() => navigate('/projects/new')}>
             <Plus size={15} strokeWidth={2.5} /> New project
           </button>
         }
@@ -157,6 +157,7 @@ export default function Projects() {
 
         <motion.button
           className={styles.newCard}
+          onClick={() => navigate('/projects/new')}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: safeProjects.length * 0.07, duration: 0.4 }}

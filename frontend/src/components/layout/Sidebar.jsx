@@ -121,7 +121,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
                   </span>
                 </button>
               ))}
-              <button className={styles.projectItem} style={{ opacity: 0.5 }}>
+              <button className={styles.projectItem} style={{ opacity: 0.5 }} onClick={() => navigate('/projects/new')}>
                 <Plus size={12} />
                 <span style={{ fontSize: 12 }}>New project</span>
               </button>

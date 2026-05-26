@@ -70,14 +70,6 @@ export default function ProjectDetail() {
   const status = PROJECT_STATUS[project.status?.toLowerCase()] || PROJECT_STATUS['ongoing'];
   const projectColor = project.color || '#3b82f6'; // Fallback color
 
-  const handleCreateDummyTask = () => {
-    createTask.mutate({
-      title: "New Task from Project Detail",
-      status: "todo",
-      project: projectId
-    });
-  };
-
   return (
     <div className={styles.page}>
       <button className={styles.backBtn} onClick={() => navigate('/projects')}>
@@ -118,7 +110,7 @@ export default function ProjectDetail() {
         </div>
         <button 
           className={styles.addBtn} 
-          onClick={handleCreateDummyTask}
+          onClick={()=>{navigate('/tasks/new')}}
           disabled={createTask.isPending}
         >
           <Plus size={15} strokeWidth={2.5} /> 

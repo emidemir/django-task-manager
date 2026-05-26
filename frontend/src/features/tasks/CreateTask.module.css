@@ -1,0 +1,159 @@
+.page {
+    padding: 32px 36px;
+    height: 100%;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .backBtn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    width: fit-content;
+    transition: color 0.15s;
+  }
+  
+  .backBtn:hover {
+    color: var(--text-primary);
+  }
+  
+  .formCard {
+    background: var(--bg-surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-xl);
+    padding: 32px;
+    max-width: 680px; /* Slightly wider for the extra fields */
+    width: 100%;
+  }
+  
+  .form {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+  
+  .row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+  }
+  
+  .gridRow3 {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 24px;
+  }
+  
+  .inputGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+  
+  .label {
+    font-size: 13px;
+    font-weight: 500;
+    color: var(--text-secondary);
+  }
+  
+  .input, .textarea, .select {
+    width: 100%;
+    background: var(--bg-elevated);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-md);
+    padding: 12px 16px;
+    color: var(--text-primary);
+    font-size: 14px;
+    outline: none;
+    transition: all 0.2s ease;
+    font-family: inherit;
+  }
+  
+  /* Fix calendar icon color on webkit date inputs */
+  .input[type="date"]::-webkit-calendar-picker-indicator {
+    filter: invert(1);
+    opacity: 0.5;
+    cursor: pointer;
+  }
+  
+  .textarea {
+    resize: vertical;
+    min-height: 100px;
+  }
+  
+  .input::placeholder, .textarea::placeholder {
+    color: var(--text-muted);
+  }
+  
+  .input:focus, .textarea:focus, .select:focus {
+    border-color: var(--teal);
+    background: var(--bg-glass);
+    box-shadow: 0 0 0 3px var(--teal-dim);
+  }
+  
+  /* Footer Actions */
+  .footer {
+    display: flex;
+    justify-content: flex-end;
+    align-items: center;
+    gap: 12px;
+    margin-top: 16px;
+    padding-top: 24px;
+    border-top: 1px solid var(--border);
+  }
+  
+  .cancelBtn {
+    padding: 10px 16px;
+    font-size: 13.5px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    border-radius: var(--radius-md);
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .cancelBtn:hover:not(:disabled) {
+    color: var(--text-primary);
+    background: var(--bg-glass);
+  }
+  
+  .submitBtn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 20px;
+    background: var(--teal);
+    color: var(--bg-base);
+    font-size: 13.5px;
+    font-weight: 600;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  
+  .submitBtn:hover:not(:disabled) {
+    background: #00fceb;
+    transform: translateY(-1px);
+  }
+  
+  .submitBtn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .spinner {
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }

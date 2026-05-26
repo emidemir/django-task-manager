@@ -9,15 +9,24 @@ class TaskSerializer(serializers.ModelSerializer):
         model=Task
         fields = '__all__'
 
+
+class UserBasicSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['id', 'username', 'first_name', 'last_name']
+
 class ProjectMemberSerializer(serializers.ModelSerializer):
-    user = serializers.PrimaryKeyRelatedField(queryset = User.objects.all())
+    # This nests the user object for reading (GET)
+    user = UserBasicSerializer(read_only=True)
+    
+    # This allows you to pass just the user UUID when creating a member (POST)
+    user_id = serializers.PrimaryKeyRelatedField(
+        queryset=User.objects.all(), source='user', write_only=True
+    )
+
     class Meta:
         model = ProjectMember
-        fields = '__all__'
-    def to_representation(self, instance):
-        data = super().to_representation(instance)
-        data['user'] = UserSerializer(instance.user).data
-        return data
+        fields = ['id', 'project', 'user', 'user_id', 'role', 'joined_at']
 
 class ProjectSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)
@@ -31,7 +40,7 @@ class AttachmentSerializer(serializers.ModelSerializer):
         model = Attachment
         fields = '__all__'
 
-class CommentSerializer(serializers.ModelField):
+class CommentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Comment
         fields = '__all__'

@@ -119,4 +119,9 @@ export const membersApi = {
   remove: (memberId) => api.delete(`/api/members/${memberId}/`).then(r => r.data),
 };
 
+// ─── Users ────────────────────────────────────────────────
+export const usersApi = {
+  getAll: () => api.get('/api/users/').then(r => r.data),
+};
+
 export default api;
