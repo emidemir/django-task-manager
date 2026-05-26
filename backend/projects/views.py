@@ -1,4 +1,5 @@
 from rest_framework.viewsets import ModelViewSet
+from rest_framework.permissions import IsAuthenticated
 
 from django.db.models import Q
 
@@ -8,6 +9,7 @@ from .permissions import IsTeamMember, IsProjectMember, TeamMemberViewsetPermiss
 
 class ProjectViewset(ModelViewSet):
     serializer_class = ProjectSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Return projects the user created OR is a member of
@@ -18,6 +20,7 @@ class ProjectViewset(ModelViewSet):
 
 class TaskViewset(ModelViewSet):
     serializer_class = TaskSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # 1. Start with tasks in projects the user has access to
@@ -36,7 +39,7 @@ class TaskViewset(ModelViewSet):
     
 class ProjectMemberViewset(ModelViewSet):
     serializer_class = ProjectMemberSerializer
-    permission_classes = [TeamMemberViewsetPermission]
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Start with project members from projects the user has access to
@@ -58,6 +61,7 @@ class ProjectMemberViewset(ModelViewSet):
 
 class AttachmentViewset(ModelViewSet):
     serializer_class = AttachmentSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         # Start with attachments in projects the user has access to
@@ -84,6 +88,7 @@ class AttachmentViewset(ModelViewSet):
     
 class CommentViewset(ModelViewSet):
     serializer_class = CommentSerializer
+    permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
         queryset = Comment.objects.all() # Add permission filtering here like above

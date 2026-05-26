@@ -23,6 +23,7 @@ class LoginView(APIView):
         user = User.objects.get(email=serializer.validated_data['email'])
         
         user = authenticate(request=request, username=getattr(user, 'username'), password=serializer.validated_data['password'])
+        print(user)
         if user:
             refresh = RefreshToken.for_user(user)
             return Response(data={
@@ -31,7 +32,7 @@ class LoginView(APIView):
                 'refresh_token': str(refresh),
             }, status=status.HTTP_200_OK)
         else:
-            return Response(data={'msg':'Bad credentials!'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(data={'msg':'User not found!!'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 class SignupView(CreateAPIView):

@@ -123,11 +123,11 @@ AUTH_USER_MODEL = 'users.User'
 # ========================= DRF =========================
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': (
-        # 'rest_framework_simplejwt.authentication.JWTAuthentication',
+        'rest_framework_simplejwt.authentication.JWTAuthentication',
     ),
     'DEFAULT_PERMISSION_CLASSES': (
         # 'rest_framework.permissions.IsAuthenticated',
-    )
+    ),
 }
 
 # ========================= JWT =========================
@@ -144,6 +144,7 @@ SIMPLE_JWT = {
 
 # ========================= ASGI =========================
 ASGI_APPLICATION = "config.asgi.application"
+# pip install channels-redis
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
