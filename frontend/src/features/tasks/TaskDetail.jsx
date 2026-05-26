@@ -4,7 +4,15 @@ import {
   ArrowLeft, Clock, MessageSquare, CheckCircle2, 
   Paperclip, FileText, Download, Send 
 } from 'lucide-react';
-import { tasks, projects, users } from '../../lib/mockData';
+
+// 1. Import your TanStack Query hooks
+import { useTask, useUpdateTask } from '../../hooks/useTasks';
+import { useProject } from '../../hooks/useProjects';
+import { useComments, useCreateComment } from '../../hooks/useComments';
+import { useAttachments } from '../../hooks/useAttachments'; // We will wire up upload later!
+
+// Keeping users mock until a useUsers hook is built
+import { users } from '../../lib/mockData';
 import { PRIORITY_COLOR, PRIORITY_LABEL } from '../../lib/constants';
 import { Avatar } from '../../components/shared';
 import styles from './TaskDetail.module.css';
@@ -14,31 +22,62 @@ export default function TaskDetail() {
   const navigate = useNavigate();
   const [newComment, setNewComment] = useState('');
 
-  const task = tasks.find(t => t.id === taskId);
+  // 2. Fetch the Task
+  const { data: task, isLoading: taskLoading, isError: taskError } = useTask(taskId);
   
-  if (!task) {
-    return <div className={styles.page}><div className={styles.emptyState}>Task not found.</div></div>;
+  // 3. Dependent Queries: These wait for the task to load to get the projectId
+  const projectId = task?.project; 
+  const { data: project } = useProject(projectId);
+  const { data: projectComments } = useComments(projectId);
+  const { data: projectAttachments } = useAttachments(projectId);
+
+  // 4. Initialize Mutations
+  const createComment = useCreateComment();
+  const updateTask = useUpdateTask();
+
+  // Handle Loading/Error States
+  if (taskLoading) {
+    return <div className={styles.page}><div className={styles.emptyState}>Loading task details...</div></div>;
   }
 
-  const project = projects.find(p => p.id === task.projectId);
-  const assignee = users.find(u => u.id === task.assigneeId);
-  const isOverdue = new Date(task.dueDate) < new Date() && task.status !== 'done';
+  if (taskError || !task) {
+    return <div className={styles.page}><div className={styles.emptyState}>Task not found or error loading.</div></div>;
+  }
 
-  // Fallback mock data matching your Django models if not present in mockData.js
-  const attachments = task.attachments || [
-    { id: '1', file: 'schema_design.pdf', size: '2.4 MB', uploaded_by: assignee, uploaded_at: '2 hours ago' },
-    { id: '2', file: 'error_logs.txt', size: '14 KB', uploaded_by: assignee, uploaded_at: 'Yesterday' }
-  ];
+  // 5. Filter project-wide data for this specific task
+  const attachments = (projectAttachments || []).filter(a => a.task === taskId);
+  const comments = (projectComments || []).filter(c => c.task === taskId);
 
-  const comments = task.comments || [
-    { id: '1', user: assignee, body: 'I just uploaded the initial schema design. Can you take a look?', created_at: '2 hours ago' }
-  ];
+  // Data Translation
+  const assigneeId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
+  const assignee = users.find(u => u.id === assigneeId);
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
+  const priorityLevel = task.priority?.toLowerCase() || 'medium';
 
+  // 6. Form Submission Handlers
   const handleCommentSubmit = (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-    // TODO: Send to Django backend
-    setNewComment('');
+    
+    // Execute the mutation
+    createComment.mutate({
+      projectId: projectId,
+      data: {
+        task: taskId,
+        body: newComment
+      }
+    }, {
+      onSuccess: () => {
+        setNewComment(''); // Clear input only if successful
+      }
+    });
+  };
+
+  const handleMarkAsDone = () => {
+    updateTask.mutate({
+      id: taskId,
+      status: 'Finished'
+    });
   };
 
   return (
@@ -51,21 +90,22 @@ export default function TaskDetail() {
         {/* Main Content Area */}
         <div className={styles.mainContent}>
           <div className={styles.headerMeta}>
-            <div className={styles.projectLabel} onClick={() => navigate(`/projects/${project?.id}`)}>
-              <div className={styles.projectDot} style={{ background: project?.color }} />
-              {project?.name}
+            <div className={styles.projectLabel} onClick={() => navigate(`/projects/${projectId}`)}>
+              <div className={styles.projectDot} style={{ background: project?.color || '#3b82f6' }} />
+              {project?.name || 'Loading project...'}
             </div>
-            <span className={styles.taskId}>TSK-{task.id.slice(0,4).toUpperCase()}</span>
+            {/* Displaying UUID cleanly is tough, so we slice the first 8 chars */}
+            <span className={styles.taskId}>TSK-{task.id.slice(0,8).toUpperCase()}</span>
           </div>
 
           <h1 className={styles.title}>{task.title}</h1>
           
           <div className={styles.statusRow}>
-            <span className={styles.statusPill} data-status={task.status}>
-              {task.status.replace('_', ' ')}
+            <span className={styles.statusPill} data-status={task.status?.toLowerCase()}>
+              {task.status || 'Ongoing'}
             </span>
-            <span className={styles.priorityPill} style={{ color: PRIORITY_COLOR[task.priority], background: PRIORITY_COLOR[task.priority] + '18' }}>
-              {PRIORITY_LABEL[task.priority]}
+            <span className={styles.priorityPill} style={{ color: PRIORITY_COLOR[priorityLevel], background: PRIORITY_COLOR[priorityLevel] + '18' }}>
+              {PRIORITY_LABEL[priorityLevel]}
             </span>
           </div>
 
@@ -87,20 +127,27 @@ export default function TaskDetail() {
             </div>
             {attachments.length > 0 ? (
               <div className={styles.attachmentGrid}>
-                {attachments.map(att => (
-                  <div key={att.id} className={styles.attachmentCard}>
-                    <div className={styles.attachmentIcon}>
-                      <FileText size={20} color="var(--teal)" />
+                {attachments.map(att => {
+                  // Extract filename from URL (e.g., /media/documents/123/file.pdf -> file.pdf)
+                  const fileName = att.file?.split('/').pop() || 'Document';
+                  
+                  return (
+                    <div key={att.id} className={styles.attachmentCard}>
+                      <div className={styles.attachmentIcon}>
+                        <FileText size={20} color="var(--teal)" />
+                      </div>
+                      <div className={styles.attachmentInfo}>
+                        <span className={styles.attachmentName}>{fileName}</span>
+                        <span className={styles.attachmentMeta}>
+                          {new Date(att.uploaded_at).toLocaleDateString()}
+                        </span>
+                      </div>
+                      <button className={styles.downloadBtn} onClick={() => window.open(att.file, '_blank')}>
+                        <Download size={16} />
+                      </button>
                     </div>
-                    <div className={styles.attachmentInfo}>
-                      <span className={styles.attachmentName}>{att.file}</span>
-                      <span className={styles.attachmentMeta}>{att.size} · {att.uploaded_at}</span>
-                    </div>
-                    <button className={styles.downloadBtn}>
-                      <Download size={16} />
-                    </button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <div className={styles.emptyBlock}>No attachments yet.</div>
@@ -123,11 +170,12 @@ export default function TaskDetail() {
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={1}
+                  disabled={createComment.isPending}
                 />
                 <button 
                   type="submit" 
                   className={styles.sendBtn}
-                  disabled={!newComment.trim()}
+                  disabled={!newComment.trim() || createComment.isPending}
                 >
                   <Send size={14} />
                 </button>
@@ -136,25 +184,30 @@ export default function TaskDetail() {
 
             {/* Comment List */}
             <div className={styles.commentList}>
-              {comments.map(comment => (
-                <div key={comment.id} className={styles.commentRow}>
-                  <Avatar initials={comment.user?.initials} color={comment.user?.color} size="md" />
-                  <div className={styles.commentBody}>
-                    <div className={styles.commentHeader}>
-                      <span className={styles.commentAuthor}>{comment.user?.name || 'Unknown User'}</span>
-                      <span className={styles.commentTime}>{comment.created_at}</span>
-                    </div>
-                    <div className={styles.commentText}>
-                      {comment.body}
+              {comments.map(comment => {
+                const commentUser = users.find(u => u.id === comment.user);
+                return (
+                  <div key={comment.id} className={styles.commentRow}>
+                    <Avatar initials={commentUser?.initials} color={commentUser?.color} size="md" />
+                    <div className={styles.commentBody}>
+                      <div className={styles.commentHeader}>
+                        <span className={styles.commentAuthor}>{commentUser?.name || 'Unknown User'}</span>
+                        <span className={styles.commentTime}>
+                          {new Date(comment.created_at).toLocaleString()}
+                        </span>
+                      </div>
+                      <div className={styles.commentText}>
+                        {comment.body}
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>
 
-        {/* Sidebar / Metadata (Remains mostly the same) */}
+        {/* Sidebar / Metadata */}
         <div className={styles.sidebar}>
           <div className={styles.sidebarCard}>
             <div className={styles.sidebarGroup}>
@@ -169,7 +222,7 @@ export default function TaskDetail() {
               <span className={styles.sidebarLabel}>Due Date</span>
               <div className={styles.dateData} style={{ color: isOverdue ? 'var(--rose)' : 'var(--text-primary)' }}>
                 <Clock size={16} />
-                <span>{task.dueDate}</span>
+                <span>{task.due_date ? new Date(task.due_date).toLocaleDateString() : 'No date set'}</span>
               </div>
             </div>
 
@@ -181,9 +234,14 @@ export default function TaskDetail() {
               </div>
             </div>
 
-            {task.status !== 'done' && (
-              <button className={styles.completeBtn}>
-                <CheckCircle2 size={16} /> Mark as Done
+            {task.status?.toLowerCase() !== 'finished' && (
+              <button 
+                className={styles.completeBtn} 
+                onClick={handleMarkAsDone}
+                disabled={updateTask.isPending}
+              >
+                <CheckCircle2 size={16} /> 
+                {updateTask.isPending ? 'Updating...' : 'Mark as Done'}
               </button>
             )}
           </div>

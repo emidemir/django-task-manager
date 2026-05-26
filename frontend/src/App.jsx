@@ -12,7 +12,7 @@ import styles from './App.module.css';
 // --- Query Keys ---
 import { taskKeys } from './hooks/useTasks';
 import { projectKeys } from './hooks/useProjects';
-import { notificationKeys } from './hooks/useNotifications';
+// import { notificationKeys } from './hooks/useNotifications';
 import { commentKeys } from './hooks/useComments';
 import { attachmentKeys } from './hooks/useAttachments';
 import { memberKeys } from './hooks/useProjectMembers';
@@ -81,10 +81,10 @@ export default function App() {
         queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
       }),
 
-      // Notifications
-      socketManager.on('notification.new', () => {
-        queryClient.invalidateQueries({ queryKey: notificationKeys.all() });
-      }),
+      // // Notifications
+      // socketManager.on('notification.new', () => {
+      //   queryClient.invalidateQueries({ queryKey: notificationKeys.all() });
+      // }),
     ];
 
     // Cleanup: unsubscribe all listeners and close socket on logout/unmount

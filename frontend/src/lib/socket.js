@@ -9,7 +9,7 @@ class SocketManager {
     if (this.socket?.readyState === WebSocket.OPEN) return;
     this._intentionalClose = false;  // 👈
 
-    this.socket = new WebSocket(`${process.env.REACT_APP_BACKEND_URL}/ws?=${token}`);
+    this.socket = new WebSocket(`${process.env.REACT_APP_BACKEND_URL}/ws/updates/`);
 
     this.socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
