@@ -19,14 +19,16 @@ import { memberKeys } from './hooks/useProjectMembers';
 
 export default function App() {
   const location = useLocation();
-  const { user } = useAuth();
+  const { user, isAuthenticated } = useAuth();
   const queryClient = useQueryClient();
   const activePage = location.pathname.split('/')[1] || 'dashboard';
 
   useEffect(() => {
-    // Connect with the user's auth token
-    if (user?.token) {
-      socketManager.connect(user.token);
+    const token = localStorage.getItem('accessToken');
+    
+    if (isAuthenticated && token) {
+      console.log("Connecting to backend websocket with token...");
+      socketManager.connect(token);
     }
 
     // --- Wire up real-time invalidations ---  

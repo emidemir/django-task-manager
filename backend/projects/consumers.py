@@ -1,22 +1,31 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
 from asgiref.sync import sync_to_async
+from django.db.models import Q
 
-# You need a helper to safely query the DB in async mode
+
 @sync_to_async
 def get_user_project_ids(user):
-    from projects.models import ProjectMember
-    # Get all project IDs this user belongs to
-    return list(ProjectMember.objects.filter(user=user).values_list('project', flat=True))
+    from projects.models import Project
+    # Get all project IDs where the user is EITHER the creator OR a team member
+    projects = Project.objects.filter(
+        Q(created_by=user) | Q(members__user=user)
+    ).values_list('id', flat=True)
+    
+    return list(projects)
 
 class UserAppConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        print("AAAAAAAA")
         self.user = self.scope["user"]
 
         # 1. Reject unauthenticated users
         if self.user.is_anonymous:
+            print("Anon user !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             await self.close()
             return
+
+        print("Inside the connext !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
         # 2. Add them to their personal notification group
         self.personal_group = f"user_{self.user.id}"

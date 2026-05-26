@@ -7,9 +7,14 @@ class SocketManager {
 
   connect(token) {
     if (this.socket?.readyState === WebSocket.OPEN) return;
-    this._intentionalClose = false;  // 👈
+    this._intentionalClose = false;
 
-    this.socket = new WebSocket(`${process.env.REACT_APP_BACKEND_URL}/ws/updates/`);
+    // 1. Grab the URL and swap http:// for ws://
+    const baseUrl = process.env.REACT_APP_BACKEND_URL.replace(/^http/, 'ws');
+    
+    // 2. Safely connect to Django (Port 8000)
+    const wsUrl = `${baseUrl}/ws/updates/?token=${token}`;
+    this.socket = new WebSocket(wsUrl);
 
     this.socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
@@ -18,7 +23,7 @@ class SocketManager {
     };
 
     this.socket.onclose = () => {
-      if (this._intentionalClose) return;  // 👈 don't reconnect on logout
+      if (this._intentionalClose) return; 
       setTimeout(() => this.connect(token), 3000);
     };
   }

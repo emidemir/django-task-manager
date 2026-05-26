@@ -23,7 +23,6 @@ class LoginView(APIView):
         user = User.objects.get(email=serializer.validated_data['email'])
         
         user = authenticate(request=request, username=getattr(user, 'username'), password=serializer.validated_data['password'])
-        print(user)
         if user:
             refresh = RefreshToken.for_user(user)
             return Response(data={

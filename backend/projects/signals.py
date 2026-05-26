@@ -43,6 +43,7 @@ def project_delete_signal(sender, instance, **kwargs):
 @receiver(post_save, sender=Task)
 def task_save_signal(sender, instance, created, **kwargs):
     event_type = 'task.created' if created else 'task.updated'
+    print("Should see something here!!!!!!!!!")
     broadcast(f'project_{instance.project.id}', {
         'type': event_type,
         'taskId': str(instance.id),
