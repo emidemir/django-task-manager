@@ -18,6 +18,8 @@ class Project(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     created_by = models.ForeignKey(User, related_name='projects', on_delete=models.CASCADE)
 
+    color = models.CharField(max_length=7, default='#3b82f6')
+
     class Meta:
         indexes = [models.Index(fields=['created_by', 'created_at'])]
 

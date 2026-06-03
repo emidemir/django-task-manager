@@ -31,9 +31,19 @@ class ProjectMemberSerializer(serializers.ModelSerializer):
 class ProjectSerializer(serializers.ModelSerializer):
     tasks = TaskSerializer(many=True, read_only=True)
     members = ProjectMemberSerializer(many=True, read_only=True)
+
     class Meta:
         model = Project
-        fields = ['id', 'name', 'status', 'created_at', 'created_by', 'tasks', 'members']
+        # Make sure 'color' is here!
+        fields = ['id', 'name', 'description', 'status', 'color', 'created_at', 'created_by', 'tasks', 'members']
+        read_only_fields = ['id', 'created_at', 'created_by']
+
+    def create(self, validated_data):
+        # This grabs the user from the request context provided by DRF
+        request = self.context.get('request')
+        if request and hasattr(request, 'user'):
+            validated_data['created_by'] = request.user
+        return super().create(validated_data)
 
 class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
