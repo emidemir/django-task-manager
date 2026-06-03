@@ -27,7 +27,6 @@ export default function App() {
     const token = localStorage.getItem('accessToken');
     
     if (isAuthenticated && token) {
-      console.log("Connecting to backend websocket with token...");
       socketManager.connect(token);
     }
 

@@ -16,16 +16,12 @@ def get_user_project_ids(user):
 
 class UserAppConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        print("AAAAAAAA")
         self.user = self.scope["user"]
 
         # 1. Reject unauthenticated users
         if self.user.is_anonymous:
-            print("Anon user !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             await self.close()
             return
-
-        print("Inside the connext !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
 
         # 2. Add them to their personal notification group
         self.personal_group = f"user_{self.user.id}"
