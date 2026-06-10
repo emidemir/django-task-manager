@@ -1,10 +1,12 @@
 import React, { createContext, useState, useContext } from 'react';
+import { useQueryClient } from '@tanstack/react-query'; // 1. Import the hook
 
 const AuthContext = createContext(null);
 
 export const AuthContextProvider = ({ children }) => {
-    // 1. Initialize state lazily. This function only runs once when the app first loads.
-    // It checks localStorage for existing user data before defaulting to null.
+    // 2. Initialize the query client
+    const queryClient = useQueryClient(); 
+    
     const [user, setUser] = useState(() => {
         try {
             const savedUser = localStorage.getItem('user');
@@ -16,10 +18,9 @@ export const AuthContextProvider = ({ children }) => {
     });
 
     const login = (userData, tokens) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        // Save the tokens so api.js can find them!
+        const userWithToken = { ...userData, token: tokens.access };
+        setUser(userWithToken);
+        localStorage.setItem('user', JSON.stringify(userWithToken));
         localStorage.setItem('accessToken', tokens.access);
         localStorage.setItem('refreshToken', tokens.refresh);
     };
@@ -27,9 +28,11 @@ export const AuthContextProvider = ({ children }) => {
     const logout = () => {
         setUser(null);
         localStorage.removeItem('user');
-        
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
+        
+        // 3. Clear the cache! This wipes all data from memory.
+        queryClient.clear(); 
     };
 
     const value = {

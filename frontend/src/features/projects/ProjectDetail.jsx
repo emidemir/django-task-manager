@@ -1,13 +1,12 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { ArrowLeft, Plus, MessageSquare, Clock, Search } from 'lucide-react';
+import { ArrowLeft, Plus, MessageSquare, Clock, Search, Users } from 'lucide-react';
 
-// 1. Import your TanStack Query hooks
 import { useProject } from '../../hooks/useProjects';
 import { useTasks, useCreateTask } from '../../hooks/useTasks'; 
+// NOTE: We no longer import ProjectTeam here!
 
-// Keeping users mock only if you haven't built a useUsers hook yet
 import { users } from '../../lib/mockData'; 
 import { PRIORITY_COLOR, PRIORITY_LABEL, PROJECT_STATUS } from '../../lib/constants';
 import { Avatar, ProgressBar } from '../../components/shared';
@@ -25,14 +24,10 @@ export default function ProjectDetail() {
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
 
-  // 2. Fetch the specific project and all tasks
   const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
   const { data: allTasks, isLoading: tasksLoading, isError: tasksError } = useTasks();
-  
-  // 3. Initialize the mutation for the "New task" button
   const createTask = useCreateTask();
 
-  // 4. Handle Loading States
   if (projectLoading || tasksLoading) {
     return (
       <div className={styles.page}>
@@ -43,32 +38,22 @@ export default function ProjectDetail() {
     );
   }
 
-  // 5. Handle Error / Not Found States
-  if (projectError || tasksError) {
-    return <div className={styles.page}><div className={styles.emptyState}>Failed to load project data.</div></div>;
-  }
-  
-  if (!project) {
-    return <div className={styles.page}><div className={styles.emptyState}>Project not found.</div></div>;
+  if (projectError || tasksError || !project) {
+    return <div className={styles.page}><div className={styles.emptyState}>Project not found or failed to load.</div></div>;
   }
 
-  // Fallbacks for data mapping
   const safeTasks = allTasks || [];
-  
-  // Filter tasks only for this project, then by search query
   const projectTasks = safeTasks.filter(t => t.project === projectId);
   const filteredTasks = projectTasks.filter(t => 
     t.title.toLowerCase().includes(search.toLowerCase())
   );
 
-  // Data Translation: Safely handle Django's data
   const taskCount = projectTasks.length;
   const completedCount = projectTasks.filter(t => t.status?.toLowerCase() === 'finished').length;
   const pct = calcPercent(completedCount, taskCount);
   
-  // Match Django's status format
   const status = PROJECT_STATUS[project.status?.toLowerCase()] || PROJECT_STATUS['ongoing'];
-  const projectColor = project.color || '#3b82f6'; // Fallback color
+  const projectColor = project.color || '#3b82f6';
 
   return (
     <div className={styles.page}>
@@ -97,110 +82,116 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Toolbar */}
-      <div className={styles.toolbar}>
-        <div className={styles.searchBox}>
-          <Search size={14} color="var(--text-muted)" />
-          <input
-            className={styles.searchInput}
-            placeholder="Search tasks..."
-            value={search}
-            onChange={e => setSearch(e.target.value)}
-          />
+      {/* Main Content (Now full width!) */}
+      <div className={styles.mainContent}>
+        
+        {/* Updated Toolbar with "Manage Team" button */}
+        <div className={styles.toolbar}>
+          <div className={styles.searchBox}>
+            <Search size={14} color="var(--text-muted)" />
+            <input
+              className={styles.searchInput}
+              placeholder="Search tasks..."
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+            />
+          </div>
+          
+          <div style={{ display: 'flex', gap: '0.75rem' }}>
+            <button 
+              className={styles.addBtn} 
+              style={{ background: 'transparent', color: 'var(--text-main)', border: '1px solid var(--border)' }}
+              onClick={() => navigate(`/projects/${projectId}/team`)}
+            >
+              <Users size={15} strokeWidth={2} /> Manage Team
+            </button>
+            
+            <button 
+              className={styles.addBtn} 
+              onClick={()=>{navigate('/tasks/new')}}
+              disabled={createTask.isPending}
+            >
+              <Plus size={15} strokeWidth={2.5} /> 
+              {createTask.isPending ? 'Saving...' : 'New task'}
+            </button>
+          </div>
         </div>
-        <button 
-          className={styles.addBtn} 
-          onClick={()=>{navigate('/tasks/new')}}
-          disabled={createTask.isPending}
-        >
-          <Plus size={15} strokeWidth={2.5} /> 
-          {createTask.isPending ? 'Saving...' : 'New task'}
-        </button>
-      </div>
 
-      {/* Kanban Board */}
-      <div className={styles.board}>
-        {COLUMNS.map((col, ci) => {
-          // Map Django status ('Todo', 'Ongoing', 'Finished') to your columns
-          const columnToDjangoStatus = {
-            'todo': 'Todo',
-            'in_progress': 'Ongoing',
-            'done': 'Finished'
-          };
-          
-          const colTasks = filteredTasks.filter(t => t.status === columnToDjangoStatus[col.id]);
-          
-          return (
-            <div key={col.id} className={styles.column}>
-              <div className={styles.colHeader}>
-                <div className={styles.colDot} style={{ background: col.color }} />
-                <span className={styles.colLabel}>{col.label}</span>
-                <span className={styles.colCount}>{colTasks.length}</span>
-                <button className={styles.colAddBtn}><Plus size={13} /></button>
-              </div>
+        {/* Kanban Board */}
+        <div className={styles.board}>
+          {COLUMNS.map((col, ci) => {
+            const columnToDjangoStatus = { 'todo': 'Todo', 'in_progress': 'Ongoing', 'done': 'Finished' };
+            const colTasks = filteredTasks.filter(t => t.status === columnToDjangoStatus[col.id]);
+            
+            return (
+              <div key={col.id} className={styles.column}>
+                <div className={styles.colHeader}>
+                  <div className={styles.colDot} style={{ background: col.color }} />
+                  <span className={styles.colLabel}>{col.label}</span>
+                  <span className={styles.colCount}>{colTasks.length}</span>
+                  <button className={styles.colAddBtn}><Plus size={13} /></button>
+                </div>
 
-              <div className={styles.cardList}>
-                {colTasks.map((task, ti) => {
-                  // DRF usually returns relation IDs or nested objects. Adjust based on your serializer.
-                  const assigneeId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
-                  const assignee = users.find(u => u.id === assigneeId);
-                  
-                  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
-                  const priorityLevel = task.priority?.toLowerCase() || 'medium';
+                <div className={styles.cardList}>
+                  {colTasks.map((task, ti) => {
+                    const assigneeId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
+                    const assignee = users.find(u => u.id === assigneeId);
+                    const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
+                    const priorityLevel = task.priority?.toLowerCase() || 'medium';
 
-                  return (
-                    <motion.div
-                      key={task.id}
-                      className={styles.taskCard}
-                      onClick={() => navigate(`/tasks/${task.id}`)}
-                      initial={{ opacity: 0, y: 12 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: ci * 0.05 + ti * 0.04, duration: 0.35 }}
-                      whileHover={{ y: -2, transition: { duration: 0.15 } }}
-                    >
-                      <div className={styles.priorityStrip} style={{ background: PRIORITY_COLOR[priorityLevel] }} />
-                      <div className={styles.cardInner}>
-                        <div className={styles.tagRow}>
-                          {(task.tags || []).map(tag => (
-                            <span key={tag} className={styles.tag}>{tag}</span>
-                          ))}
-                          {task.priority && (
-                            <span className={styles.priorityPill} style={{ color: PRIORITY_COLOR[priorityLevel], background: PRIORITY_COLOR[priorityLevel] + '18' }}>
-                              {PRIORITY_LABEL[priorityLevel]}
-                            </span>
-                          )}
-                        </div>
-
-                        <p className={styles.cardTitle}>{task.title}</p>
-                        {task.description && <p className={styles.cardDesc}>{task.description}</p>}
-
-                        <div className={styles.cardFooter}>
-                          <div className={styles.cardMeta}>
-                            {/* Assumes backend sends comments or a comment_count field */}
-                            {task.comments?.length > 0 && (
-                              <span className={styles.metaItem}>
-                                <MessageSquare size={11} /> {task.comments.length}
-                              </span>
-                            )}
-                            {task.due_date && (
-                              <span className={styles.metaItem} style={{ color: isOverdue ? 'var(--rose)' : 'var(--text-muted)' }}>
-                                <Clock size={11} /> {new Date(task.due_date).toLocaleDateString()}
+                    return (
+                      <motion.div
+                        key={task.id}
+                        className={styles.taskCard}
+                        onClick={() => navigate(`/tasks/${task.id}`)}
+                        initial={{ opacity: 0, y: 12 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: ci * 0.05 + ti * 0.04, duration: 0.35 }}
+                        whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                      >
+                        <div className={styles.priorityStrip} style={{ background: PRIORITY_COLOR[priorityLevel] }} />
+                        <div className={styles.cardInner}>
+                          <div className={styles.tagRow}>
+                            {(task.tags || []).map(tag => (
+                              <span key={tag} className={styles.tag}>{tag}</span>
+                            ))}
+                            {task.priority && (
+                              <span className={styles.priorityPill} style={{ color: PRIORITY_COLOR[priorityLevel], background: PRIORITY_COLOR[priorityLevel] + '18' }}>
+                                {PRIORITY_LABEL[priorityLevel]}
                               </span>
                             )}
                           </div>
-                          {assignee && (
-                            <Avatar initials={assignee.initials} color={assignee.color} size="sm" title={assignee.name} />
-                          )}
+
+                          <p className={styles.cardTitle}>{task.title}</p>
+                          {task.description && <p className={styles.cardDesc}>{task.description}</p>}
+
+                          <div className={styles.cardFooter}>
+                            <div className={styles.cardMeta}>
+                              {task.comments?.length > 0 && (
+                                <span className={styles.metaItem}>
+                                  <MessageSquare size={11} /> {task.comments.length}
+                                </span>
+                              )}
+                              {task.due_date && (
+                                <span className={styles.metaItem} style={{ color: isOverdue ? 'var(--rose)' : 'var(--text-muted)' }}>
+                                  <Clock size={11} /> {new Date(task.due_date).toLocaleDateString()}
+                                </span>
+                              )}
+                            </div>
+                            {assignee && (
+                              <Avatar initials={assignee.initials} color={assignee.color} size="sm" title={assignee.name} />
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    </motion.div>
-                  );
-                })}
-                {colTasks.length === 0 && <div className={styles.emptyCol}>No tasks here</div>}
+                      </motion.div>
+                    );
+                  })}
+                  {colTasks.length === 0 && <div className={styles.emptyCol}>No tasks here</div>}
+                </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
       </div>
     </div>
   );

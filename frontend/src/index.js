@@ -25,7 +25,7 @@ import Projects      from './features/projects/Projects';
 import ProjectDetail from './features/projects/ProjectDetail';
 import CreateProject from './features/projects/CreateProject';
 import Notifications from './features/notifications/Notifications';
-import Team          from './features/team/Team';
+import ProjectTeamPage          from './features/projects/ProjectTeamPage';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -40,6 +40,7 @@ const router = createBrowserRouter([
   // Public Routes
   { path: '/', element: <SignIn/> },
   { path: '/signup', element: <SignUp/> },
+  { path: '/login', element: <SignIn/> },
 
   // Private Routes
   {
@@ -54,9 +55,9 @@ const router = createBrowserRouter([
           { path: '/tasks/:taskId', element: <TaskDetail/> },
           { path: '/projects', element: <Projects/> },
           { path: '/projects/:projectId', element: <ProjectDetail/> },
+          { path: '/projects/:projectId/team', element: <ProjectTeamPage/> },
           { path: '/projects/new', element: <CreateProject/> },
           { path: '/notifications', element: <Notifications/> },
-          { path: '/team', element: <Team/> },
           // { path: '/settings', element: <Settings/> },
         ]
       }

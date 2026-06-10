@@ -119,9 +119,11 @@ export const membersApi = {
   remove: (memberId) => api.delete(`/api/members/${memberId}/`).then(r => r.data),
 };
 
-// ─── Users ────────────────────────────────────────────────
+// ─── Users (Elasticsearch) ────────────────────────────────   
 export const usersApi = {
-  getAll: () => api.get('/api/users/').then(r => r.data),
+  // Replace with your actual Django Elasticsearch route
+  search: (query) => api.get(`/api/users/search/?email=${query}`).then(r => r.data), 
 };
+
 
 export default api;

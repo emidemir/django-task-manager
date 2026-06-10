@@ -1,29 +1,28 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom'; // 1. Import useNavigate
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   LayoutDashboard, FolderKanban, CheckSquare, Bell,
-  Settings, ChevronRight, Zap, Users, Plus, LogOut
+  Settings, ChevronRight, Zap, Plus, LogOut
 } from 'lucide-react';
 import { projects } from '../../lib/mockData';
 import { useNotifications } from '../../hooks/useNotifications';
-import { useAuth } from '../../contexts/AuthContext'; // 2. Import your AuthContext
+import { useAuth } from '../../contexts/AuthContext';
 import styles from './Sidebar.module.css';
 
 const NAV_ITEMS = [
   { id: 'dashboard',     label: 'Dashboard',     icon: LayoutDashboard },
-  { id: 'projects',      label: 'Projects',       icon: FolderKanban },
-  { id: 'tasks',         label: 'My Tasks',       icon: CheckSquare },
-  { id: 'team',          label: 'Team',           icon: Users },
+  { id: 'projects',      label: 'Projects',      icon: FolderKanban },
+  { id: 'tasks',         label: 'My Tasks',      icon: CheckSquare },
+  // 'Team' has been removed from global navigation
 ];
 
-export function Sidebar({ activePage }) { // Removed onNavigate prop
-  const navigate = useNavigate(); // Initialize navigation
+export function Sidebar({ activePage }) {
+  const navigate = useNavigate();
   const [projectsOpen, setProjectsOpen] = useState(true);
   const { unreadCount } = useNotifications();
-  const { user, logout } = useAuth(); // Grab the real user and logout function
+  const { user, logout } = useAuth();
 
-  // Safely extract initials (e.g., "Alex Carter" -> "AC")
   const getInitials = (name) => {
     if (!name) return 'U';
     const names = name.split('-');
@@ -32,7 +31,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
 
   const handleLogout = () => {
     logout();
-    navigate('/'); // Send back to login screen
+    navigate('/');
   };
 
   return (
@@ -54,7 +53,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
             <button
               key={item.id}
               className={`${styles.navItem} ${isActive ? styles.active : ''}`}
-              onClick={() => navigate(`/${item.id}`)} // Use navigate here
+              onClick={() => navigate(`/${item.id}`)}
             >
               <Icon size={16} strokeWidth={isActive ? 2.5 : 1.8} />
               <span>{item.label}</span>
@@ -69,10 +68,10 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
           );
         })}
 
-        {/* Notifications — separated so badge logic is contained */}
+        {/* Notifications */}
         <button
           className={`${styles.navItem} ${activePage === 'notifications' ? styles.active : ''}`}
-          onClick={() => navigate('/notifications')} // Use navigate here
+          onClick={() => navigate('/notifications')}
         >
           <Bell size={16} strokeWidth={activePage === 'notifications' ? 2.5 : 1.8} />
           <span>Notifications</span>
@@ -112,7 +111,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
                 <button
                   key={project.id}
                   className={styles.projectItem}
-                  onClick={() => navigate('/projects')} // Use navigate here
+                  onClick={() => navigate('/projects')}
                 >
                   <span className={styles.projectDot} style={{ background: project.color }} />
                   <span className={styles.projectName}>{project.name}</span>
@@ -137,7 +136,6 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
           <span>Settings</span>
         </button>
         
-        {/* Dynamic User Profile Card */}
         <div className={styles.userCard}>
           <div
             className={styles.avatar}
@@ -146,7 +144,7 @@ export function Sidebar({ activePage }) { // Removed onNavigate prop
             {getInitials(user?.username)}
           </div>
           <div className={styles.userInfo}>
-            <span className={styles.userName}>{`${user?.first_name} ${user?.last_name}` || 'User'}</span>
+            <span className={styles.userName}>{`${user?.first_name} ${user?.last_name}`.trim() || user?.username || 'User'}</span>
             <span className={styles.userRole}>{user?.email || 'Member'}</span>
           </div>
           <button 
