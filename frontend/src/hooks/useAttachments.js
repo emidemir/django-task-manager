@@ -6,7 +6,7 @@ export const attachmentKeys = {
   list: (projectId) => ['attachments', { projectId }],
 };
 
-export function useAttachments(projectId) {
+export function useProjectAttachments(projectId) {
   return useQuery({
     queryKey: attachmentKeys.list(projectId),
     queryFn: () => attachmentsApi.getAllForProject(projectId),
@@ -16,19 +16,11 @@ export function useAttachments(projectId) {
 
 export function useUploadAttachment() {
   const queryClient = useQueryClient();
+  
   return useMutation({
-    mutationFn: ({ projectId, formData }) => attachmentsApi.upload(projectId, formData),
+    mutationFn: ({ projectId, formData }) => attachmentsApi.upload(formData),
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: attachmentKeys.list(variables.projectId) });
-    },
-  });
-}
-
-export function useDeleteAttachment() {
-  const queryClient = useQueryClient();
-  return useMutation({
-    mutationFn: ({ projectId, attachmentId }) => attachmentsApi.delete(projectId, attachmentId),
-    onSuccess: (_, variables) => {
+      // Invalidate so the UI instantly shows the new file
       queryClient.invalidateQueries({ queryKey: attachmentKeys.list(variables.projectId) });
     },
   });

@@ -106,9 +106,12 @@ export const commentsApi = {
 // ─── Attachments ──────────────────────────────────────────
 export const attachmentsApi = {
   getAllForProject: (projectId) => api.get(`/api/attachments/?project=${projectId}`).then(r => r.data),
+  
+  // Update the headers here
   upload: (formData) => api.post(`/api/attachments/`, formData, {
     headers: { 'Content-Type': 'multipart/form-data' }
   }).then(r => r.data),
+  
   delete: (attachmentId) => api.delete(`/api/attachments/${attachmentId}/`).then(r => r.data),
 };
 

@@ -6,8 +6,18 @@ from users.models import User
 
 class TaskSerializer(serializers.ModelSerializer):
     class Meta:
-        model=Task
+        model = Task
         fields = '__all__'
+
+    # This intercepts the data right before it is sent to the frontend
+    def to_representation(self, instance):
+        response = super().to_representation(instance)
+        # Swap the raw UUID strings for actual user dictionaries
+        if instance.assigned_to:
+            response['assigned_to'] = UserBasicSerializer(instance.assigned_to).data
+        if instance.created_by:
+            response['created_by'] = UserBasicSerializer(instance.created_by).data
+        return response
 
 
 class UserBasicSerializer(serializers.ModelSerializer):
@@ -48,9 +58,13 @@ class ProjectSerializer(serializers.ModelSerializer):
 class AttachmentSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attachment
-        fields = '__all__'
+        fields = ['id', 'task', 'uploaded_by', 'file', 'uploaded_at']
+        read_only_fields = ['id', 'uploaded_by', 'uploaded_at']
 
 class CommentSerializer(serializers.ModelSerializer):
+    user = UserBasicSerializer(read_only=True)
+
     class Meta:
         model = Comment
         fields = '__all__'
+        read_only_fields = ['id', 'user', 'created_at', 'updated_at']

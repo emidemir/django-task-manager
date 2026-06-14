@@ -1,5 +1,6 @@
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.parsers import MultiPartParser, FormParser
 
 from django.db.models import Q
 
@@ -63,6 +64,8 @@ class AttachmentViewset(ModelViewSet):
     serializer_class = AttachmentSerializer
     permission_classes = [IsAuthenticated]
 
+    parser_classes = [MultiPartParser, FormParser]
+
     def get_queryset(self):
         # Start with attachments in projects the user has access to
         user_projects = Project.objects.filter(
@@ -86,12 +89,15 @@ class AttachmentViewset(ModelViewSet):
 
         return queryset
     
+    def perform_create(self, serializer):
+        serializer.save(uploaded_by=self.request.user)
+    
 class CommentViewset(ModelViewSet):
     serializer_class = CommentSerializer
     permission_classes = [IsAuthenticated]
     
     def get_queryset(self):
-        queryset = Comment.objects.all() # Add permission filtering here like above
+        queryset = Comment.objects.all() 
         task_id = self.request.query_params.get('task')
         project_id = self.request.query_params.get('project')
         
@@ -101,3 +107,6 @@ class CommentViewset(ModelViewSet):
             queryset = queryset.filter(task__project_id=project_id)
             
         return queryset
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)

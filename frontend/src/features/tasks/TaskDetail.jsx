@@ -5,37 +5,32 @@ import {
   Paperclip, FileText, Download, Send 
 } from 'lucide-react';
 
-// 1. Import your TanStack Query hooks
 import { useTask, useUpdateTask } from '../../hooks/useTasks';
 import { useProject } from '../../hooks/useProjects';
 import { useComments, useCreateComment } from '../../hooks/useComments';
-import { useAttachments } from '../../hooks/useAttachments'; // We will wire up upload later!
+import { useProjectAttachments, useUploadAttachment } from '../../hooks/useAttachments';
 
-// Keeping users mock until a useUsers hook is built
-import { users } from '../../lib/mockData';
-import { PRIORITY_COLOR, PRIORITY_LABEL } from '../../lib/constants';
 import { Avatar } from '../../components/shared';
 import styles from './TaskDetail.module.css';
 
 export default function TaskDetail() {
   const { taskId } = useParams();
   const navigate = useNavigate();
+
   const [newComment, setNewComment] = useState('');
 
-  // 2. Fetch the Task
+  // Fetch task
   const { data: task, isLoading: taskLoading, isError: taskError } = useTask(taskId);
-  
-  // 3. Dependent Queries: These wait for the task to load to get the projectId
-  const projectId = task?.project; 
+
+  const projectId = task?.project;
   const { data: project } = useProject(projectId);
   const { data: projectComments } = useComments(projectId);
-  const { data: projectAttachments } = useAttachments(projectId);
+  const { data: projectAttachments } = useProjectAttachments(projectId);
 
-  // 4. Initialize Mutations
   const createComment = useCreateComment();
   const updateTask = useUpdateTask();
+  const uploadAttachment = useUploadAttachment();
 
-  // Handle Loading/Error States
   if (taskLoading) {
     return <div className={styles.page}><div className={styles.emptyState}>Loading task details...</div></div>;
   }
@@ -44,40 +39,76 @@ export default function TaskDetail() {
     return <div className={styles.page}><div className={styles.emptyState}>Task not found or error loading.</div></div>;
   }
 
-  // 5. Filter project-wide data for this specific task
   const attachments = (projectAttachments || []).filter(a => a.task === taskId);
   const comments = (projectComments || []).filter(c => c.task === taskId);
 
-  // Data Translation
   const assigneeId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
-  const assignee = users.find(u => u.id === assigneeId);
-  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
-  const priorityLevel = task.priority?.toLowerCase() || 'medium';
+  const assignee = task.assigned_to;
 
-  // 6. Form Submission Handlers
+  const assigneeName = assignee 
+  ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.username 
+  : "Unassigned";
+  
+  const assigneeInitials = assigneeName !== "Unassigned" 
+  ? assigneeName.substring(0, 2).toUpperCase() 
+  : "?";
+
+
+  const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
+
+  // -------------------------
+  // Comment submit
+  // -------------------------
   const handleCommentSubmit = (e) => {
     e.preventDefault();
     if (!newComment.trim()) return;
-    
-    // Execute the mutation
+
     createComment.mutate({
-      projectId: projectId,
+      projectId,
       data: {
         task: taskId,
         body: newComment
       }
     }, {
-      onSuccess: () => {
-        setNewComment(''); // Clear input only if successful
-      }
+      onSuccess: () => setNewComment('')
     });
   };
 
+  // -------------------------
+  // Task complete
+  // -------------------------
   const handleMarkAsDone = () => {
     updateTask.mutate({
       id: taskId,
       status: 'Finished'
     });
+  };
+
+  // -------------------------
+  // File upload handlers
+  // -------------------------
+  const handleFileChange = (e) => {
+    const selectedFile = e.target.files?.[0];
+    if (!selectedFile) return;
+
+    const formData = new FormData();
+    formData.append('task', taskId);
+    formData.append('file', selectedFile);
+
+    uploadAttachment.mutate(
+      { projectId, formData },
+      {
+        onSuccess: () => {
+          // Reset the input value so the user can upload the same file again if they delete it
+          e.target.value = '';
+        },
+        onError: (error) => {
+          console.error("Upload Failed:", error);
+          alert("File upload failed. Check console for details.");
+          e.target.value = '';
+        }
+      }
+    );
   };
 
   return (
@@ -87,50 +118,52 @@ export default function TaskDetail() {
       </button>
 
       <div className={styles.layout}>
-        {/* Main Content Area */}
         <div className={styles.mainContent}>
+
+          {/* HEADER */}
           <div className={styles.headerMeta}>
             <div className={styles.projectLabel} onClick={() => navigate(`/projects/${projectId}`)}>
               <div className={styles.projectDot} style={{ background: project?.color || '#3b82f6' }} />
               {project?.name || 'Loading project...'}
             </div>
-            {/* Displaying UUID cleanly is tough, so we slice the first 8 chars */}
             <span className={styles.taskId}>TSK-{task.id.slice(0,8).toUpperCase()}</span>
           </div>
 
           <h1 className={styles.title}>{task.title}</h1>
-          
-          <div className={styles.statusRow}>
-            <span className={styles.statusPill} data-status={task.status?.toLowerCase()}>
-              {task.status || 'Ongoing'}
-            </span>
-            <span className={styles.priorityPill} style={{ color: PRIORITY_COLOR[priorityLevel], background: PRIORITY_COLOR[priorityLevel] + '18' }}>
-              {PRIORITY_LABEL[priorityLevel]}
-            </span>
-          </div>
 
-          {/* Description Section */}
-          <div className={styles.section}>
-            <h3 className={styles.sectionTitle}>Description</h3>
-            <div className={styles.description}>
-              {task.description || "No description provided."}
-            </div>
-          </div>
-
-          {/* Attachments Section */}
+          {/* ATTACHMENTS */}
           <div className={styles.section}>
             <div className={styles.sectionHeader}>
               <h3 className={styles.sectionTitle}>Attachments</h3>
-              <button className={styles.actionBtn}>
-                <Paperclip size={14} /> Add File
-              </button>
+
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                <input
+                  type="file"
+                  onChange={handleFileChange}
+                  style={{ display: 'none' }}
+                  id="fileUploadInput"
+                  disabled={uploadAttachment.isPending}
+                />
+
+                <label 
+                  htmlFor="fileUploadInput" 
+                  className={styles.actionBtn}
+                  style={{ 
+                    opacity: uploadAttachment.isPending ? 0.7 : 1, 
+                    cursor: uploadAttachment.isPending ? 'not-allowed' : 'pointer' 
+                  }}
+                >
+                  <Paperclip size={14} /> 
+                  {uploadAttachment.isPending ? 'Uploading...' : 'Upload File'}
+                </label>
+              </div>
             </div>
+
             {attachments.length > 0 ? (
               <div className={styles.attachmentGrid}>
                 {attachments.map(att => {
-                  // Extract filename from URL (e.g., /media/documents/123/file.pdf -> file.pdf)
                   const fileName = att.file?.split('/').pop() || 'Document';
-                  
+
                   return (
                     <div key={att.id} className={styles.attachmentCard}>
                       <div className={styles.attachmentIcon}>
@@ -142,7 +175,10 @@ export default function TaskDetail() {
                           {new Date(att.uploaded_at).toLocaleDateString()}
                         </span>
                       </div>
-                      <button className={styles.downloadBtn} onClick={() => window.open(att.file, '_blank')}>
+                      <button
+                        className={styles.downloadBtn}
+                        onClick={() => window.open(att.file, '_blank')}
+                      >
                         <Download size={16} />
                       </button>
                     </div>
@@ -156,24 +192,23 @@ export default function TaskDetail() {
 
           <div className={styles.divider} />
 
-          {/* Comments Section */}
+          {/* COMMENTS */}
           <div className={styles.section}>
             <h3 className={styles.sectionTitle}>Activity</h3>
-            
-            {/* Comment Input */}
+
             <form className={styles.commentForm} onSubmit={handleCommentSubmit}>
               <Avatar initials="You" color="var(--sky)" size="md" />
               <div className={styles.commentInputWrapper}>
-                <textarea 
-                  className={styles.commentInput} 
+                <textarea
+                  className={styles.commentInput}
                   placeholder="Add a comment..."
                   value={newComment}
                   onChange={(e) => setNewComment(e.target.value)}
                   rows={1}
                   disabled={createComment.isPending}
                 />
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   className={styles.sendBtn}
                   disabled={!newComment.trim() || createComment.isPending}
                 >
@@ -182,16 +217,31 @@ export default function TaskDetail() {
               </div>
             </form>
 
-            {/* Comment List */}
             <div className={styles.commentList}>
               {comments.map(comment => {
-                const commentUser = users.find(u => u.id === comment.user);
+                // The user is now a real object attached to the comment from the backend!
+                const commentUser = comment.user;
+                
+                // Safely format the display name
+                const displayName = commentUser 
+                  ? `${commentUser.first_name || ''} ${commentUser.last_name || ''}`.trim() || commentUser.username 
+                  : 'Unknown User';
+
+                // Grab the first letter for the Avatar
+                const userInitials = displayName.substring(0, 2).toUpperCase();
+
                 return (
                   <div key={comment.id} className={styles.commentRow}>
-                    <Avatar initials={commentUser?.initials} color={commentUser?.color} size="md" />
+                    <Avatar
+                      initials={userInitials}
+                      color="var(--indigo)" // You can randomize this or pass a real color if you add it to the user model later
+                      size="md"
+                    />
                     <div className={styles.commentBody}>
                       <div className={styles.commentHeader}>
-                        <span className={styles.commentAuthor}>{commentUser?.name || 'Unknown User'}</span>
+                        <span className={styles.commentAuthor}>
+                          {displayName}
+                        </span>
                         <span className={styles.commentTime}>
                           {new Date(comment.created_at).toLocaleString()}
                         </span>
@@ -207,16 +257,17 @@ export default function TaskDetail() {
           </div>
         </div>
 
-        {/* Sidebar / Metadata */}
+        {/* SIDEBAR */}
         <div className={styles.sidebar}>
           <div className={styles.sidebarCard}>
-            <div className={styles.sidebarGroup}>
-              <span className={styles.sidebarLabel}>Assignee</span>
-              <div className={styles.assigneeData}>
-                <Avatar initials={assignee?.initials} color={assignee?.color} size="md" />
-                <span>{assignee?.name || "Unassigned"}</span>
-              </div>
-            </div>
+          <div className={styles.sidebarGroup}>
+           <span className={styles.sidebarLabel}>Assignee</span>
+           <div className={styles.assigneeData}>
+             {/* Use the new variables here */}
+             <Avatar initials={assigneeInitials} color="var(--sky)" size="md" />
+             <span>{assigneeName}</span>
+           </div>
+         </div>
 
             <div className={styles.sidebarGroup}>
               <span className={styles.sidebarLabel}>Due Date</span>
@@ -235,17 +286,18 @@ export default function TaskDetail() {
             </div>
 
             {task.status?.toLowerCase() !== 'finished' && (
-              <button 
-                className={styles.completeBtn} 
+              <button
+                className={styles.completeBtn}
                 onClick={handleMarkAsDone}
                 disabled={updateTask.isPending}
               >
-                <CheckCircle2 size={16} /> 
+                <CheckCircle2 size={16} />
                 {updateTask.isPending ? 'Updating...' : 'Mark as Done'}
               </button>
             )}
           </div>
         </div>
+
       </div>
     </div>
   );

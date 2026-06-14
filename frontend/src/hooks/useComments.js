@@ -17,9 +17,9 @@ export function useComments(projectId) {
 export function useCreateComment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ projectId, data }) => commentsApi.create(projectId, data),
+    // FIXED: Removed 'projectId' from the commentsApi.create call
+    mutationFn: ({ projectId, data }) => commentsApi.create(data),
     onSuccess: (_, variables) => {
-      // variables contains the arguments passed to mutationFn
       queryClient.invalidateQueries({ queryKey: commentKeys.list(variables.projectId) });
     },
   });
@@ -28,7 +28,7 @@ export function useCreateComment() {
 export function useDeleteComment() {
   const queryClient = useQueryClient();
   return useMutation({
-    mutationFn: ({ projectId, commentId }) => commentsApi.delete(projectId, commentId),
+    mutationFn: ({ projectId, commentId }) => commentsApi.delete(commentId),
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: commentKeys.list(variables.projectId) });
     },

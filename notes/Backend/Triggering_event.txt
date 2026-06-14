@@ -1,0 +1,35 @@
+There are two legit places that I can trigger an event: in views's perform_create method, and django signals. I wanted to continue with django signals since I'll also be creating objects with Django-admin panel too.
+
+But how do you trigger an event in the channel layers.
+In fact, what is channel layers?
+For all of these questions, you can just read this following documentation: https://channels.readthedocs.io/en/latest/
+First, you need to understand how the channel layer works. I won't be explaining it here, but we can use it outside of the consumers: https://channels.readthedocs.io/en/latest/topics/channel_layers.html
+
+I'm just going to do something like the following for each event type that might occur:
+
+# projects/signals.py
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+from channels.layers import get_channel_layer
+from asgiref.sync import async_to_sync
+from .models import Task
+
+@receiver(post_save, sender=Task)
+def broadcast_new_task(sender, instance, created, **kwargs):
+    if created: # Only trigger on creation, not updates
+        channel_layer = get_channel_layer()
+        room_group_name = f'project_{instance.project.id}'
+        
+        async_to_sync(channel_layer.group_send)(
+            room_group_name,
+            {
+                'type': 'task_created_event',
+                'payload': {
+                    'type': 'task.created',
+                    'projectId': str(instance.project.id)
+                }
+            }
+        )
+
+
+For example, a task might be created, deleted, updated, and a project might have the same events. Basically, I'm planning to put a signal for each of my models inside the projects app; which are: Project, Task, ProjectMember, Attachment, Comment

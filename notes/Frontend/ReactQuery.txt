@@ -1,0 +1,23 @@
+In Index.js file, I defined the ReactQuery client. I then wrapped my application (inside the root.render) with the ReactQuery client just like a React Context (highly related). Then, I defined the socket.js file inside the lib folder. This file exports a custom js object called SocketManager. This class object's job is to store the websocket connection related information and functions. 
+
+Then, I went to the App.jsx file. The reason I went there is this: App.jsx wrapps the whole application. It has two components inside: Sidebar, and the Outlet component. Sidebar is always displayed and has some objects in it. Outlet is just a placeholder component to display whatever the current url route corresponds to. Therefore, the best place to initialize the socketmanager is inside the App.jsx file. Inside this file, I defined a useEffect hook to basically wire up all the cache invalidations the ReactQueryClient needs. I must explain this part in more detail for further clarification. 
+
+The SocketManager object has a function called .on(...). It's a function to call a handler when a certain event happens. I defined a handler for each type of event that might happen in the application. Event name is the first parameter, and the event handler is the second parameter. Event parameters are just the cache invalidation functions that are coming from the ReactQueryClient itself. queryClient.invalidateQueries(...). This function requires cache id for invalidating the cache stored inside the query client object. Those cache ids are stored as arrays. I pass this: { queryKey: taskKeys.all() } as parameter (cache id) to the invalidation function but what it is? Basically, I created files (custom hooks) which are just simple javascript objects that hold functions. I defined them inside the hooks folder as useProjects.js, useTasks.js, useNotifications.js. They hold objects and hooks. The object just returns 2 functions with different keys:
+export const taskKeys = {
+  all:    ()   => ['tasks'],
+  detail: (id) => ['tasks', id],
+};
+
+In the App.jsx file, I use the taskKeys.all() or taskKeys.detail(id) as cache ids, passed into the invalidation function. 
+
+
+Also in these hooks files, I have custom hooks to use when querying actual data. For instance, 
+export function useTasks() {
+  return useQuery({
+    queryKey: taskKeys.all(),
+    queryFn:  tasksApi.getAll,
+  });
+}
+
+This function will be used inside the Projects.jsx component. When it's used, the React Query fetches the data and stores it in the cache under the label ['projects'].
+
