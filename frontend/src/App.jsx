@@ -76,10 +76,14 @@ export default function App() {
       socketManager.on('member.added', ({ projectId }) => {
         queryClient.invalidateQueries({ queryKey: memberKeys.list(projectId) });
         queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) }); // To update member counts
+        queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+        queryClient.invalidateQueries({ queryKey: taskKeys.all() });
       }),
       socketManager.on('member.removed', ({ projectId }) => {
         queryClient.invalidateQueries({ queryKey: memberKeys.list(projectId) });
         queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
+        queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+        queryClient.invalidateQueries({ queryKey: taskKeys.all() });
       }),
 
       // // Notifications

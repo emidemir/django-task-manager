@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { membersApi } from '../api';
 import { projectKeys } from './useProjects'; // We import this to update project member counts!
+import { taskKeys } from './useTasks';
 
 export const memberKeys = {
   all: () => ['members'],
@@ -30,6 +31,8 @@ export function useAddMember() {
       queryClient.invalidateQueries({ queryKey: memberKeys.list(projectId) });
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(projectId) });
       queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+
+      queryClient.invalidateQueries({ queryKey: taskKeys.all() });
     },
   });
 }
@@ -45,6 +48,8 @@ export function useRemoveMember() {
       queryClient.invalidateQueries({ queryKey: memberKeys.list(variables.projectId) });
       queryClient.invalidateQueries({ queryKey: projectKeys.detail(variables.projectId) });
       queryClient.invalidateQueries({ queryKey: projectKeys.all() });
+
+      queryClient.invalidateQueries({ queryKey: taskKeys.all() });
     },
   });
 }
