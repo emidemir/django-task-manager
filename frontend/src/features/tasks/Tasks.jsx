@@ -1,20 +1,17 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Plus, MessageSquare, Clock, Filter, Search } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext'; 
 
-// 1. Import your TanStack Query hooks
-import { useTasks, useCreateTask } from '../../hooks/useTasks';
+// 1. Import your TanStack Query hooks (NO MOCK DATA)
+import { useTasks, useCreateTask, useSearchTasks } from '../../hooks/useTasks';
 import { useProjects } from '../../hooks/useProjects';
 
-// Keep users mock ONLY if you haven't built a useUsers hook yet
-import { users } from '../../lib/mockData';
 import { PRIORITY_COLOR, PRIORITY_LABEL } from '../../lib/constants';
 import { PageHeader, Avatar } from '../../components/shared';
 import styles from './Tasks.module.css';
 
-// 2. Updated to match Django's exact TaskStatus choices ('Todo', 'Ongoing', 'Finished')
 const COLUMNS = [
   { id: 'Todo',     label: 'To Do',       color: 'var(--text-muted)' },
   { id: 'Ongoing',  label: 'In Progress', color: 'var(--sky)' },
@@ -24,19 +21,34 @@ const COLUMNS = [
 export default function Tasks() {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [search, setSearch]           = useState('');
+  const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [selectedProject, setProject] = useState('all');
 
-  // 3. Fetch real data for the authenticated user
+  // Debounce logic
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+      console.log("Hi!............")
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Fetch real data
   const { data: allTasks, isLoading: tasksLoading, isError: tasksError } = useTasks();
   const { data: allProjects, isLoading: projectsLoading } = useProjects();
   const createTask = useCreateTask();
 
-  // Personalize the title based on the logged-in user
+  // Fetch ES search results 
+  const { 
+    data: searchResults, 
+    isFetching: searchLoading,
+    isError: searchError // Catch ES errors!
+  } = useSearchTasks(debouncedSearch);
+
   const firstName = user?.first_name ? user.first_name : (user?.username?.split('-')[0] || 'User');
   const pageTitle = firstName ? `${firstName}'s Tasks` : 'My Tasks';
 
-  // 4. Handle Loading & Error States gracefully
   if (tasksLoading || projectsLoading) {
     return (
       <div className={styles.page}>
@@ -55,16 +67,15 @@ export default function Tasks() {
     );
   }
 
-  // Fallbacks to prevent mapping over undefined
-  const safeTasks = allTasks || [];
+  const safeTasks    = allTasks    || [];
   const safeProjects = allProjects || [];
 
-  // Filter tasks based on the search bar and project dropdown
-  const filtered = safeTasks.filter(t => {
-    const matchSearch  = t.title?.toLowerCase().includes(search.toLowerCase());
-    // Use Django's 'project' FK field (which is the project ID)
-    const matchProject = selectedProject === 'all' || t.project === selectedProject;
-    return matchSearch && matchProject;
+  // Determine which data set to use for the board
+  const baseTasks = (debouncedSearch.length > 1 && searchResults) ? searchResults : safeTasks;
+
+  // Apply project filter
+  const filtered = baseTasks.filter(t => {
+    return selectedProject === 'all' || t.project === selectedProject;
   });
 
   return (
@@ -84,16 +95,18 @@ export default function Tasks() {
         }
       />
 
-      {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles.searchBox}>
-          <Search size={14} color="var(--text-muted)" />
+          <Search size={14} color={searchError ? "var(--rose)" : "var(--text-muted)"} />
           <input
             className={styles.searchInput}
-            placeholder="Search tasks…"
+            placeholder={searchError ? "Search failed!" : "Search tasks…"}
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          {searchLoading && (
+            <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>…</span>
+          )}
         </div>
         <div className={styles.filters}>
           <button className={styles.filterBtn}><Filter size={13} /> Filter</button>
@@ -108,10 +121,8 @@ export default function Tasks() {
         </div>
       </div>
 
-      {/* Kanban board */}
       <div className={styles.board}>
         {COLUMNS.map((col, ci) => {
-          // Compare against Django's status casing
           const colTasks = filtered.filter(t => t.status === col.id);
           
           return (
@@ -125,9 +136,17 @@ export default function Tasks() {
 
               <div className={styles.cardList}>
                 {colTasks.map((task, ti) => {
-                  // 5. Data Translation: Match Django's foreign keys and field names
-                  const assigneeId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
-                  const assignee = users.find(u => u.id === assigneeId);
+                  
+                  // Read the real database object directly
+                  const assignee = task.assigned_to;
+                  const assigneeName = assignee 
+                    ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.username 
+                    : "Unassigned";
+
+                  const assigneeInitials = assigneeName !== "Unassigned" 
+                    ? assigneeName.substring(0, 2).toUpperCase() 
+                    : "?";
+
                   const project  = safeProjects.find(p => p.id === task.project);
                   
                   const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
@@ -138,7 +157,6 @@ export default function Tasks() {
                     <motion.div
                       key={task.id}
                       className={styles.taskCard}
-                      // 6. Navigate to the TaskDetail page when clicked
                       onClick={() => navigate(`/tasks/${task.id}`)}
                       style={{ cursor: 'pointer' }}
                       initial={{ opacity: 0, y: 12 }}
@@ -193,10 +211,10 @@ export default function Tasks() {
                             )}
                           </div>
                           <Avatar
-                            initials={assignee?.initials}
-                            color={assignee?.color}
+                            initials={assigneeInitials}
+                            color="var(--sky)"
                             size="sm"
-                            title={assignee?.name}
+                            title={assigneeName}
                           />
                         </div>
                       </div>

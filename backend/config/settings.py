@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     'corsheaders', # https://pypi.org/project/django-cors-headers/
     'storages', #https://pypi.org/project/django-storages/ 
     'rest_framework_simplejwt.token_blacklist',
+    'django_elasticsearch_dsl', #https://django-elasticsearch-dsl.readthedocs.io/en/latest/
     
     # Django apps
     'projects',
@@ -204,9 +205,10 @@ STORAGES = {
 
 # ========================= ELASTICSEARCH =========================
 # https://github.com/emidemir/django-ecommerce-backend/tree/main#2-elasticsearch-text-search
+# settings.py
 ELASTICSEARCH_DSL = {
     'default': {
         'hosts': 'http://localhost:9200',
-        'http_auth': ('username', 'password')
+        # 'basic_auth': ('username', 'password'),  # ← changed from http_auth
     }
 }

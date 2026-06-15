@@ -94,6 +94,8 @@ export const tasksApi = {
   create:   (data)       => api.post(`/api/tasks/`, data).then(r => r.data),
   update:   (id, data)   => api.patch(`/api/tasks/${id}/`, data).then(r => r.data),
   delete:   (id)         => api.delete(`/api/tasks/${id}/`).then(r => r.data),
+
+  search:   (query)      => api.get(`/api/tasks/search/?q=${query}`).then(r => r.data),
 };
 
 // ─── Comments ─────────────────────────────────────────────

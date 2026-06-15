@@ -56,3 +56,14 @@ export function useDeleteTask() {
     },
   });
 }
+
+// Add this to the bottom of useTasks.js
+export function useSearchTasks(query) {
+  return useQuery({
+    queryKey: ['tasks', 'search', query],
+    queryFn: () => tasksApi.search(query),
+    // Only fire the API call if the user typed at least 2 characters
+    enabled: query.length > 1, 
+    staleTime: 1000 * 60, // Keep search results cached for a minute
+  });
+}

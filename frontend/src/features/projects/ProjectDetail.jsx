@@ -1,13 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { ArrowLeft, Plus, MessageSquare, Clock, Search, Users } from 'lucide-react';
 
 import { useProject } from '../../hooks/useProjects';
-import { useTasks, useCreateTask } from '../../hooks/useTasks'; 
-// NOTE: We no longer import ProjectTeam here!
+// 1. Added useSearchTasks here
+import { useTasks, useCreateTask, useSearchTasks } from '../../hooks/useTasks'; 
 
-import { users } from '../../lib/mockData'; 
+// 2. REMOVED the mockData import completely
 import { PRIORITY_COLOR, PRIORITY_LABEL, PROJECT_STATUS } from '../../lib/constants';
 import { Avatar, ProgressBar } from '../../components/shared';
 import { calcPercent } from '../../lib/utils';
@@ -22,11 +22,29 @@ const COLUMNS = [
 export default function ProjectDetail() {
   const { projectId } = useParams();
   const navigate = useNavigate();
+  
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
 
+  // 3. Debounce logic: update 'debouncedSearch' 300ms after the user stops typing
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setDebouncedSearch(search);
+    }, 300);
+    return () => clearTimeout(handler);
+  }, [search]);
+
+  // Fetch standard data
   const { data: project, isLoading: projectLoading, isError: projectError } = useProject(projectId);
   const { data: allTasks, isLoading: tasksLoading, isError: tasksError } = useTasks();
   const createTask = useCreateTask();
+
+  // 4. Fetch ES search results 
+  const { 
+    data: searchResults, 
+    isFetching: searchLoading,
+    isError: searchError 
+  } = useSearchTasks(debouncedSearch);
 
   if (projectLoading || tasksLoading) {
     return (
@@ -43,11 +61,15 @@ export default function ProjectDetail() {
   }
 
   const safeTasks = allTasks || [];
-  const projectTasks = safeTasks.filter(t => t.project === projectId);
-  const filteredTasks = projectTasks.filter(t => 
-    t.title.toLowerCase().includes(search.toLowerCase())
-  );
+  
+  // 5. Determine which data set to use (ES results or standard cache)
+  const baseTasks = (debouncedSearch.length > 1 && searchResults) ? searchResults : safeTasks;
+  
+  // 6. ALWAYS filter the resulting dataset down to just this specific project
+  const projectTasks = baseTasks.filter(t => t.project === projectId);
 
+  // We use projectTasks for our stats calculation so it reflects the whole project 
+  // (Note: if you are searching, the stats will reflect the *search results* stats, which is usually preferred)
   const taskCount = projectTasks.length;
   const completedCount = projectTasks.filter(t => t.status?.toLowerCase() === 'finished').length;
   const pct = calcPercent(completedCount, taskCount);
@@ -82,19 +104,22 @@ export default function ProjectDetail() {
         </div>
       </div>
 
-      {/* Main Content (Now full width!) */}
+      {/* Main Content */}
       <div className={styles.mainContent}>
         
-        {/* Updated Toolbar with "Manage Team" button */}
         <div className={styles.toolbar}>
           <div className={styles.searchBox}>
-            <Search size={14} color="var(--text-muted)" />
+            <Search size={14} color={searchError ? "var(--rose)" : "var(--text-muted)"} />
             <input
               className={styles.searchInput}
-              placeholder="Search tasks..."
+              placeholder={searchError ? "Search failed!" : "Search tasks..."}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
+            {/* Show tiny loading indicator when ES is working */}
+            {searchLoading && (
+              <span style={{ fontSize: 11, color: 'var(--text-muted)', marginLeft: 4 }}>...</span>
+            )}
           </div>
           
           <div style={{ display: 'flex', gap: '0.75rem' }}>
@@ -121,7 +146,7 @@ export default function ProjectDetail() {
         <div className={styles.board}>
           {COLUMNS.map((col, ci) => {
             const columnToDjangoStatus = { 'todo': 'Todo', 'in_progress': 'Ongoing', 'done': 'Finished' };
-            const colTasks = filteredTasks.filter(t => t.status === columnToDjangoStatus[col.id]);
+            const colTasks = projectTasks.filter(t => t.status === columnToDjangoStatus[col.id]);
             
             return (
               <div key={col.id} className={styles.column}>
@@ -134,8 +159,17 @@ export default function ProjectDetail() {
 
                 <div className={styles.cardList}>
                   {colTasks.map((task, ti) => {
-                    const assigneeId = typeof task.assigned_to === 'object' ? task.assigned_to?.id : task.assigned_to;
-                    const assignee = users.find(u => u.id === assigneeId);
+                    
+                    // 7. Parse the real database object instead of mock data
+                    const assignee = task.assigned_to;
+                    const assigneeName = assignee 
+                      ? `${assignee.first_name || ''} ${assignee.last_name || ''}`.trim() || assignee.username 
+                      : "Unassigned";
+
+                    const assigneeInitials = assigneeName !== "Unassigned" 
+                      ? assigneeName.substring(0, 2).toUpperCase() 
+                      : "?";
+
                     const isOverdue = task.due_date && new Date(task.due_date) < new Date() && task.status !== 'Finished';
                     const priorityLevel = task.priority?.toLowerCase() || 'medium';
 
@@ -178,9 +212,10 @@ export default function ProjectDetail() {
                                 </span>
                               )}
                             </div>
-                            {assignee && (
-                              <Avatar initials={assignee.initials} color={assignee.color} size="sm" title={assignee.name} />
-                            )}
+                            
+                            {/* Updated Avatar to use the generated initials and name */}
+                            <Avatar initials={assigneeInitials} color="var(--sky)" size="sm" title={assigneeName} />
+                            
                           </div>
                         </div>
                       </motion.div>

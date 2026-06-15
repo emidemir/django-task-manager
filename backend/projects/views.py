@@ -1,3 +1,7 @@
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from .documents import TaskDocument
+
 from rest_framework.viewsets import ModelViewSet
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.parsers import MultiPartParser, FormParser
@@ -38,6 +42,31 @@ class TaskViewset(ModelViewSet):
             
         return queryset
     
+    # Add this new endpoint
+    @action(detail=False, methods=['get'])
+    def search(self, request):
+        query = request.query_params.get('q', '')
+        if not query:
+            return Response([])
+
+        # 1. Ask Elasticsearch to find matches across multiple fields
+        search_query = TaskDocument.search().query(
+            "multi_match",
+            query=query,
+            fields=['title', 'description', 'project.name', 'assigned_to.first_name', 'assigned_to.username'],
+            fuzziness='AUTO' # Handles minor typos!
+        )
+
+        # 2. Extract the matching IDs
+        es_ids = [hit.meta.id for hit in search_query]
+
+        # 3. Pass those IDs through your existing secure queryset
+        # This guarantees users can only search tasks they have permission to see
+        queryset = self.get_queryset().filter(id__in=es_ids)
+        
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)
+
 class ProjectMemberViewset(ModelViewSet):
     serializer_class = ProjectMemberSerializer
     permission_classes = [IsAuthenticated]
