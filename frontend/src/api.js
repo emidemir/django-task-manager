@@ -1,7 +1,7 @@
 import axios from 'axios';
 
 const api = axios.create({
-  baseURL: `${process.env.REACT_APP_BACKEND_URL}`, // Replace with your actual API URL
+  baseURL: process.env.REACT_APP_BACKEND_URL || '',
   headers: {
     'Content-Type': 'application/json',
   },
@@ -42,7 +42,7 @@ api.interceptors.response.use(
         const refreshToken = localStorage.getItem('refreshToken');
         
         // Use the default 'axios' here, NOT 'api', to avoid triggering interceptors again
-        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL}/api/token/refresh/`, {
+        const response = await axios.post(`${process.env.REACT_APP_BACKEND_URL || ''}/api/token/refresh/`, {
           refresh: refreshToken // SimpleJWT expects the key "refresh"
         });
 
