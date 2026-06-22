@@ -8,22 +8,19 @@ class SocketManager {
   connect(token) {
     if (this.socket?.readyState === WebSocket.OPEN) return;
     this._intentionalClose = false;
-
-    // 1. Grab the URL and swap http:// for ws://
-    const baseUrl = process.env.REACT_APP_BACKEND_URL.replace(/^http/, 'ws');
-    
-    // 2. Safely connect to Django (Port 8000)
-    const wsUrl = `${baseUrl}/ws/updates/?token=${token}`;
+  
+    // Relative URL — browser resolves against current origin and protocol
+    const wsUrl = `/ws/updates/?token=${token}`;
     this.socket = new WebSocket(wsUrl);
-
+  
     this.socket.onmessage = (event) => {
       const message = JSON.parse(event.data);
       const handlers = this.listeners.get(message.type) ?? [];
       handlers.forEach(fn => fn(message.payload));
     };
-
+  
     this.socket.onclose = () => {
-      if (this._intentionalClose) return; 
+      if (this._intentionalClose) return;
       setTimeout(() => this.connect(token), 3000);
     };
   }
